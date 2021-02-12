@@ -1,0 +1,57 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# MCMC chains
+mcmc_chains/*
+mcmc_chains*
+
+# Plots
+plots/*
+
+# Results
+results/*
+
+# R store
+*.DS_Store
+.DS_Store
+.Rhistory
+mcmc_chains/.DS_Store
+mcmc_chains/1.nursing_home_ct/.DS_Store
+figures/.DS_Store
+.Rhistory
+.DS_Store
+.DS_Store
+data/MA_SEIR_sim/*
+data/ReportSims/*
+data/ONS_sim/*
+data/NH_sim/*

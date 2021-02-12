@@ -1,0 +1,8 @@
+values,names,fixed,lower_bound,upper_bound,steps,lower_start,upper_start
+2.5,R0,0,0,10,0.1,1.5,3
+4,infectious,0,0,25,0.1,5,10
+2,latent,0,0,25,0.1,5,10
+2,incubation,0,0,25,0.1,5,10
+11,recovery,0,0,25,0.1,5,10
+15,t0,0,0,100,0.1,0,50
+0.0001,I0,1,0,0.01,0.1,0,0.001
