@@ -515,11 +515,12 @@ if(!file.exists(savewd2)) dir.create(savewd2,recursive = TRUE)
 if(rerun_mcmc){
   runname_use <- paste0(run_name,"_",lastday)
   dir.create(paste0(savewd2,"/",runname_use),recursive = TRUE)
-  res <- foreach(j=i:nchains,.packages = c("lazymcmc","extraDistr","ggthemes","tidyverse","deSolve")) %dopar% {
+  res <- foreach(j=i:nchains,.packages = c("extraDistr","ggthemes","tidyverse","deSolve")) %dopar% {
     posterior <- create_post_func_seeirr(parTab=parTab, data=Pos_Data,
                                          ts=times,PRIOR_FUNC=prior_func_seeirr_single,ver="likelihood")
-
-    devtools::load_all("~/Documents/GitHub/virosolver")
+    devtools::load_all(paste0(HOME_WD,"/virosolver"))
+    devtools::load_all(paste0(HOME_WD,"/lazymcmc"))
+    
     ## Generate starting parameters
     startTab <- generate_start_tab(parTab)
     start_pars <- startTab$values
