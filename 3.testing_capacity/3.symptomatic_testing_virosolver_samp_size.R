@@ -78,11 +78,11 @@ control_table$run_name <- 1:nrow(control_table)
 
 n_temperatures <- 5
 mcmcPars_ct <- list("iterations"=30000,"popt"=0.44,"opt_freq"=1000,
-                    "thin"=10,"adaptive_period"=10000,"save_block"=1000,"temperature" = seq(1,101,length.out=n_temperatures),
+                    "thin"=100,"adaptive_period"=10000,"save_block"=1000,"temperature" = seq(1,101,length.out=n_temperatures),
                     "parallel_tempering_iter" = 5,"max_adaptive_period" = 20000, 
                     "adaptiveLeeway" = 0.2, "max_total_iterations" = 30000)
 mcmcPars_seir <- list("iterations"=50000,"popt"=0.44,"opt_freq"=1000,
-                    "thin"=10,"adaptive_period"=20000,"save_block"=1000,"temperature" = seq(1,101,length.out=n_temperatures),
+                    "thin"=100,"adaptive_period"=20000,"save_block"=1000,"temperature" = seq(1,101,length.out=n_temperatures),
                     "parallel_tempering_iter" = 5,"max_adaptive_period" = 20000, 
                     "adaptiveLeeway" = 0.2, "max_total_iterations" = 50000)
 nchains <- 3
