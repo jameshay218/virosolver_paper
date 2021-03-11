@@ -86,7 +86,7 @@ mcmcPars_seir <- list("iterations"=50000,"popt"=0.44,"opt_freq"=1000,
                     "parallel_tempering_iter" = 5,"max_adaptive_period" = 20000, 
                     "adaptiveLeeway" = 0.2, "max_total_iterations" = 50000)
 nchains <- 3
-n_samp <- 1000 ## Number of posterior samples for plots
+n_samp <- 200 ## Number of posterior samples for plots
 
 ## Set Simulation Number and get sim settings
 Sim <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
