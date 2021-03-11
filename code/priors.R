@@ -6,6 +6,7 @@ sds_exp <- sds_seir <- sds_gp <- c("beta"=0.25,"R0"=0.6,
                                    "incubation"=0.25, "infectious"=0.5,
                                    "rho"=2,"nu"=0.5)
 
+
 ## Prior for exponential growth model
 prior_func_hinge_exp <- function(pars,...){
   prior1 <- dnorm(pars["beta"], 0, sds_exp["beta"],log=TRUE)
@@ -88,4 +89,16 @@ prior_func_seeirr <- function(pars){
   p5 <- dlnorm(pars["recovery"],log(11), sds["recovery"], log=TRUE)
   return(sum(p1,p1b,p1c,p1d, p2,p3,p4,p5))
 }
-
+## Prior for SEEIRR transmission model
+## Note that the R0s and t0s are independent, the infection course parameters are shared
+prior_func_seeirr_single <- function(pars){
+  sds <- c("latent"=0.25,"incubation"=0.25,"infectious"=0.5,"recovery"=0.25)
+  names(pars) <- parTab$names
+  ## Uniform priors in parTab
+  #p1 <- dlnorm(pars["R0"], log(2), 0.6,log=TRUE)
+  p2 <- dlnorm(pars["latent"],log(2),sds["latent"],log=TRUE)
+  p3 <- dlnorm(pars["incubation"],log(2),sds["incubation"],log=TRUE)
+  p4 <- dlnorm(pars["infectious"],log(4),sds["infectious"],log=TRUE)
+  p5 <- dlnorm(pars["recovery"],log(11), sds["recovery"], log=TRUE)
+  return(sum(p2,p3,p4,p5))
+}
