@@ -177,7 +177,7 @@ LL_R <- simulate_reporting(complete_linelist,
                            symptomatic=FALSE)
 SVL <- simulate_viral_loads_wrapper(LL_R$sampled_individuals,
                                     kinetics_pars=pars)
-Cts_Full <- bind_cols(Sim=Sim, TestDay=Days, TestProbs="R", SVL %>% dplyr::select(sampled_time, ct_obs))
+Cts_Full <- bind_cols(Sim=Sim, TestDay=Days, total_prob=total_prob, TestProbs="R", SVL %>% dplyr::select(sampled_time, ct_obs))
 
 
 run_name <- paste0("RepScen_Pos_",Sim,"_",Days,Probs)
@@ -467,9 +467,9 @@ for(i in seq_along(obs_times)){
   colnames(Rts_quants) <- c("median","lower_95","lower_50","upper_50","upper_95","t")
   colnames(trajs_quants) <- c("median","lower_95","lower_50","upper_50","upper_95","t")
   R_Ests_Full <- bind_rows(R_Ests_Full,
-                           bind_cols(Sim=Sim, TestDay=Days, TestProbs=Probs, variable="infections", trajs_quants),
-                           bind_cols(Sim=Sim, TestDay=Days, TestProbs=Probs, variable="growth_rate", trajs1_quants),
-                           bind_cols(Sim=Sim, TestDay=Days, TestProbs=Probs, variable="R", Rts_quants))
+                           bind_cols(Sim=Sim, TestDay=Days, TestProbs=Probs, total_prob=total_prob, variable="infections", trajs_quants),
+                           bind_cols(Sim=Sim, TestDay=Days, TestProbs=Probs, total_prob=total_prob, variable="growth_rate", trajs1_quants),
+                           bind_cols(Sim=Sim, TestDay=Days, TestProbs=Probs, total_prob=total_prob, variable="R", Rts_quants))
   
   ## Growth rate plot
   p_gr <- ggplot(trajs1_quants) + geom_ribbon(aes(x=t,ymin=lower_95,ymax=upper_95),alpha=0.25) +
@@ -667,9 +667,10 @@ seeirr_gr_quants <- dat_inc %>% group_by(t) %>%
             
 SEEIRR_Res <- bind_rows(quants_inc,quants_R,seeirr_gr_quants) 
 SEEIRR_Res <- SEEIRR_Res %>%
-  mutate(Sim=Sim, TestDay=Days, TestProbs=Probs,model="SEEIRR")
+  mutate(Sim=Sim, TestDay=Days, TestProbs=Probs,total_prob=total_prob,model="SEEIRR")
 
 ########################################
 ## 8. Save Results
 ########################################
-save(list=c("Cts_Full","R_Ests_Full","True_SEIR_sim","SEEIRR_Res"), file=paste0(results_wd,"/Sim_viro_pop",pop_no,"_",Days,"", Probs,".Rda"))
+total_prob_name <- gsub("[.]","",as.character(total_prob))
+save(list=c("Cts_Full","R_Ests_Full","True_SEIR_sim","SEEIRR_Res"), file=paste0(results_wd,"/Sim_viro_pop",pop_no,"_",Days,"", Probs,"",total_prob_name,".Rda"))
