@@ -102,3 +102,11 @@ prior_func_seeirr_single <- function(pars){
   p5 <- dlnorm(pars["recovery"],log(11), sds["recovery"], log=TRUE)
   return(sum(p2,p3,p4,p5))
 }
+
+## Prior for SEIR model
+prior_func_seir_single <- function(pars,...){
+  incu_prior <- dlnorm(pars["incubation"],log(means[which(names(means) == "incubation")]), sds_seir["incubation"], TRUE)
+  infectious_prior <- dlnorm(pars["infectious"],log(means[which(names(means) == "infectious")]),sds_seir["infectious"],TRUE)
+  
+  incu_prior + infectious_prior# + r0_prior
+}

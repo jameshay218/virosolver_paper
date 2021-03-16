@@ -27,7 +27,7 @@ library(doParallel)
 # library(lazymcmc) devtools::install_github("jameshay218/lazymcmc) ## Note that in this script, the parallel tempering version is used. See README
 
 HOME_WD <- "~"
-#HOME_WD <- "~/Documents/GitHub/"
+HOME_WD <- "~/Documents/GitHub/"
 devtools::load_all(paste0(HOME_WD,"/virosolver"))
 devtools::load_all(paste0(HOME_WD,"/lazymcmc"))
 
@@ -47,15 +47,19 @@ export_theme <- export_theme + theme(axis.text.x=element_text(size=7),
 main_wd <- paste0(HOME_WD,"/virosolver_paper/")
 chainwd <- paste0(HOME_WD, "/virosolver_paper/mcmc_chains/ReportSims/Symptom_new")
 chainwd_seeirr <- paste0(HOME_WD, "/virosolver_paper/mcmc_chains/ReportSims/SEEIRR")
+chainwd_seir <- paste0(HOME_WD, "/virosolver_paper/mcmc_chains/ReportSims/SEIR")
 plot_wd <- paste0(HOME_WD, "/virosolver_paper/plots/ReportSims/Symptom_new")
 plot_wd_seeirr  <- paste0(HOME_WD, "/virosolver_paper/plots/ReportSims/SEEIRR")
+plot_wd_seir  <- paste0(HOME_WD, "/virosolver_paper/plots/ReportSims/SEIR")
 data_wd <- paste0(HOME_WD, "/virosolver_paper/data/ReportSims/Symptom")
 results_wd <- paste0(HOME_WD, "/virosolver_paper/results/ReportSims/Symptom_new/virosolver/")
 
 if(!file.exists(chainwd)) dir.create(chainwd,recursive = TRUE)
 if(!file.exists(chainwd_seeirr)) dir.create(chainwd_seeirr,recursive = TRUE)
+if(!file.exists(chainwd_seir)) dir.create(chainwd_seeirr,recursive = TRUE)
 if(!file.exists(plot_wd)) dir.create(plot_wd,recursive = TRUE)
 if(!file.exists(plot_wd_seeirr)) dir.create(plot_wd_seeirr,recursive = TRUE)
+if(!file.exists(plot_wd_seir)) dir.create(plot_wd_seeirr,recursive = TRUE)
 if(!file.exists(data_wd)) dir.create(data_wd,recursive = TRUE)
 if(!file.exists(results_wd)) dir.create(results_wd,recursive = TRUE)
 
@@ -90,6 +94,7 @@ n_samp <- 200 ## Number of posterior samples for plots
 
 ## Set Simulation Number and get sim settings
 Sim <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
+Sim <- 1
 print(paste0("Starting Simulation Number: ",Sim))
 
 ## Name of this run
@@ -110,6 +115,7 @@ total_prob <- control_table$total_prob[Sim]
 model_pars <- read.csv(paste0(main_wd,"pars/massachusetts/partab_seir_model.csv"))
 pars <- model_pars$values
 names(pars) <- model_pars$names
+ct_pars <- pars
 
 ## Simulation parameters
 population_n <- 1000000
@@ -496,9 +502,9 @@ R_Ests_Full %>% filter(variable == "R") %>% ggplot() +
   geom_line(data=seir_dynamics$seir_outputs,aes(x=step,y=Rt),col="red")
 
 ########################################
-## 7. Fit SEIR model to just point prevalence
+## 7. Fit SEEIRR model to just point prevalence
 ########################################
-Pos_Data <- Cts_Full %>% mutate(pos=if_else(ct_obs < pars["intercept"],1,0)) %>% dplyr::select(-ct_obs)
+Pos_Data <- Cts_Full %>% mutate(pos=if_else(ct_obs < ct_pars["intercept"],1,0)) %>% dplyr::select(-ct_obs)
 Pos_Data <- Pos_Data %>% group_by(sampled_time) %>% summarize(POS=sum(pos),NEG=sum(1-pos)) %>% rename(date=sampled_time)
 
 parTab <- read.csv("pars/generic/partab_seeirr.csv",stringsAsFactors=FALSE)
@@ -559,8 +565,6 @@ chain <- load_mcmc_chains(paste0(savewd2,"/", runname_use), parTab,FALSE,1,mcmcP
 chain <- as.data.frame(chain)
 chain$sampno <- 1:nrow(chain)
 
-
-
 ## Get credible intervals etc
 quants_all <- NULL
 random_traj_all <- NULL
@@ -596,16 +600,18 @@ for(j in seq_along(samps)){
   tmp_inc <- tibble(t=times1,inc=model_func_inc(pars)[1:length(times1)])
   x <- tmp_inc$inc
   
-  tmp_inc$Rt <- (1-cumsum(tmp_inc$inc))*unname(pars["R0"])
+  ## Get Rt
+  seir_pars <- c(pars["R0"]*(1/pars["infectious"]),1/pars["latent"],1/pars["incubation"],1/pars["infectious"],1/pars["recovery"])
+  init <- c(1-pars["I0"],0,0,pars["I0"],0,0,0)
+  names(seir_pars) <- c("beta","sigma","alpha","gamma","omega")
+  sol <- solveSEEIRRModel_rlsoda(times1,init,seir_pars,TRUE)
+  S_compartment <- c(rep(1, pars["t0"]),sol[,2])[1:length(times1)]
+  
+  tmp_inc$Rt <- S_compartment*unname(pars["R0"])
   tmp_inc$gr <- c(NaN,log(x[2:length(x)]/x[1:(length(x)-1)]))
   
   dat_inc[[j]] <- tmp_inc
   dat_inc[[j]]$samp <- j
-  
-  ## Get Rt
-  seir_pars <- c("beta"=pars["R0"]*(1/pars["infectious"]),1/pars["latent"],1/pars["incubation"],1/pars["infectious"],1/pars["recovery"])
-  init <- c(1-pars["I0"],0,0,pars["I0"],0,0,0)
-  sol <- solveSEEIRRModel_rlsoda(times, init, seir_pars,compatible=TRUE)
 }
 
 ## Prevalence - quantiles
@@ -669,8 +675,183 @@ SEEIRR_Res <- bind_rows(quants_inc,quants_R,seeirr_gr_quants)
 SEEIRR_Res <- SEEIRR_Res %>%
   mutate(Sim=Sim, TestDay=Days, TestProbs=Probs,total_prob=total_prob,model="SEEIRR")
 
+
 ########################################
-## 8. Save Results
+## 8. Fit SEIR model to just point prevalence
+########################################
+Pos_Data <- Cts_Full %>% mutate(pos=if_else(ct_obs < ct_pars["intercept"],1,0)) %>% dplyr::select(-ct_obs)
+Pos_Data <- Pos_Data %>% group_by(sampled_time) %>% summarize(POS=sum(pos),NEG=sum(1-pos)) %>% rename(date=sampled_time)
+
+parTab <- read.csv("pars/generic/partab_seir_model.csv",stringsAsFactors=FALSE)
+parTab[parTab$names=="t0",c("upper_bound","upper_start")] <- c(max(Pos_Data$date),15)
+parTab[parTab$names=="R0",c("lower_bound","lower_start")] <- 1
+## Test that function works
+posterior <- create_post_func_seeirr(parTab=parTab, data=Pos_Data,
+                                     INCIDENCE_FUNC = detectable_SEIRModel,
+                                     ts=times,PRIOR_FUNC=prior_func_seir_single,ver="likelihood")
+posterior(parTab$values)
+
+savewd3 <- paste0(chainwd_seir, "/", run_name)
+if(!file.exists(savewd3)) dir.create(savewd3,recursive = TRUE)
+
+if(rerun_mcmc){
+  runname_use <- paste0(run_name,"_",lastday)
+  dir.create(paste0(savewd3,"/",runname_use),recursive = TRUE)
+  res <- foreach(j=i:nchains,.packages = c("extraDistr","ggthemes","tidyverse","deSolve")) %dopar% {
+    posterior <- create_post_func_seeirr(parTab=parTab, data=Pos_Data,
+                                         INCIDENCE_FUNC = detectable_SEIRModel,
+                                         ts=times,PRIOR_FUNC=prior_func_seir_single,ver="likelihood")
+    devtools::load_all(paste0(HOME_WD,"/virosolver"))
+    devtools::load_all(paste0(HOME_WD,"/lazymcmc"))
+    
+    ## Generate starting parameters
+    startTab <- generate_start_tab(parTab)
+    start_pars <- startTab$values
+    
+    if(n_temperatures > 1){
+      startTab <- rep(list(parTab),n_temperatures)
+      for(k in 1:length(startTab)){
+        startTab[[k]] <- generate_start_tab(parTab)
+      }
+    }
+    covMat <- diag(nrow(startTab[[1]]))
+    mvrPars <- list(covMat,2.38/sqrt(nrow(startTab[[1]][startTab[[1]]$fixed==0,])),w=0.8)
+    mvrPars <- rep(list(mvrPars), n_temperatures)
+    
+    output <- run_MCMC(parTab=startTab,
+                       data=Pos_Data,
+                       INCIDENCE_FUNC=detectable_SEIRModel,
+                       PRIOR_FUNC = prior_func_seir_single,
+                       mcmcPars=mcmcPars_seir,
+                       filename=paste0(savewd3,"/", runname_use,"/",runname_use,"_chainno_",j),
+                       CREATE_POSTERIOR_FUNC=create_post_func_seeirr,
+                       ts=times,
+                       mvrPars=mvrPars,
+                       OPT_TUNING=0.2)
+    
+    chain <- read.csv(output$file)
+    chain <- chain[chain$sampno > mcmcPars_seir["adaptive_period"],]
+    chain$sampno <- chain$sampno + max(chain$sampno)*(i-1)
+    chain
+  }
+  chain <- do.call("bind_rows",res)
+} 
+
+## If not rerunning, use stored chains
+chain <- load_mcmc_chains(paste0(savewd3,"/", runname_use), parTab,FALSE,1,mcmcPars_seir["adaptive_period"],PTchain = TRUE)$chain
+chain <- as.data.frame(chain)
+chain$sampno <- 1:nrow(chain)
+
+
+
+## Get credible intervals etc
+quants_all <- NULL
+random_traj_all <- NULL
+t0_all <- NULL
+best_traj_all <- NULL
+n_samp <- 1000 ## Number of posterior samples
+samps <- sample(unique(chain$sampno), n_samp)
+times1 <- times ## Final time to solve model up until
+
+## Function to solve prevalence
+model_func <- create_post_func_seeirr(parTab, data=Pos_Data,
+                                      ts=times1,INCIDENCE_FUNC=detectable_SEIRModel,
+                                      PRIOR_FUNC=prior_func_seir_single,ver="model")
+## Function to solve incidence
+model_func_inc <- create_post_func_seeirr(parTab, data=Pos_Data,
+                                          ts=times1,INCIDENCE_FUNC=solveSEIRModel_rlsoda_wrapper,
+                                          PRIOR_FUNC=prior_func_seir_single,ver="model")
+
+## Get MAP trajectories
+best_pars <- get_best_pars(chain)
+best_traj <- tibble(t=times1,prev=model_func(best_pars)[1:length(times1)])
+best_inc_traj <- tibble(t=times1,inc=model_func_inc(best_pars)[1:length(times1)])
+best_inc_traj$Rt <- (1-cumsum(best_inc_traj$inc))*unname(pars["R0"])
+
+dat <- NULL
+dat_inc <- NULL 
+## Get posterior draw trajectories
+for(j in seq_along(samps)){
+  pars <- get_index_pars(chain, samps[j])
+  dat[[j]] <- tibble(t=times1,prev=model_func(pars)[1:length(times1)])
+  dat[[j]]$samp <- j
+  
+  tmp_inc <- tibble(t=times1,inc=model_func_inc(pars)[1:length(times1)])
+  x <- tmp_inc$inc
+  
+  ## Get Rt
+  seir_pars <- c("beta"=pars["R0"]*(1/pars["infectious"]),1/pars["incubation"],1/pars["infectious"])
+  names(seir_pars) <- c("beta","sigma","gamma")
+  init <- c(1-pars["I0"],0,pars["I0"],0)
+  sol <- solveSEIRModel_rlsoda(times1, init, seir_pars,compatible=TRUE)
+  S_compartment <- c(rep(1, pars["t0"]),sol[,2])[1:length(times1)]
+  
+  tmp_inc$Rt <- S_compartment*unname(pars["R0"])
+  tmp_inc$gr <- c(NaN,log(x[2:length(x)]/x[1:(length(x)-1)]))
+  
+  dat_inc[[j]] <- tmp_inc
+  dat_inc[[j]]$samp <- j
+  
+}
+
+## Prevalence - quantiles
+dat <- do.call("bind_rows",dat)
+quants <- dat %>% group_by( t) %>%
+  summarize(lower_95=quantile(prev, 0.025),
+            lower_50=quantile(prev,0.25),
+            median=median(prev),
+            upper_50=quantile(prev,0.75),
+            upper_95=quantile(prev, 0.975))
+
+## Incidence - quantiles
+dat_inc <- do.call("bind_rows",dat_inc)
+quants_inc <- dat_inc %>% group_by(t) %>%
+  summarize(lower_95=quantile(inc, 0.025),
+            lower_50=quantile(inc,0.25),
+            median=median(inc),
+            upper_50=quantile(inc,0.75),
+            upper_95=quantile(inc, 0.975)) %>%
+  mutate(variable="Infections")
+
+quants_R <- dat_inc %>% group_by(t) %>%
+  summarize(lower_95=quantile(Rt, 0.025),
+            lower_50=quantile(Rt,0.25),
+            median=median(Rt),
+            upper_50=quantile(Rt,0.75),
+            upper_95=quantile(Rt, 0.975)) %>%
+  mutate(variable="R")
+
+ggplot(quants_R) + 
+  geom_ribbon(aes(x=t,ymin=lower_95,ymax=upper_95),alpha=0.1,col="black") +
+  geom_ribbon(aes(x=t,ymin=lower_50,ymax=upper_50),alpha=0.25,col="black") +
+  geom_ribbon(data=Rts_quants,aes(x=t,ymin=lower_95,ymax=upper_95),fill="red",alpha=0.1,col="red") +
+  geom_ribbon(data=Rts_quants,aes(x=t,ymin=lower_50,ymax=upper_50),fill="red",alpha=0.25,col="red") +
+  geom_line(data=True_SEIR %>% filter(variable=="R"),aes(x=t,y=median),col="purple")
+
+
+## Get random trajectories
+## Prevalence
+random_traj <- dat %>%
+  filter(samp %in% sample(unique(dat$samp), 25))
+## Incidence
+random_traj_inc <- dat_inc %>%
+  filter(samp %in% sample(unique(dat$samp), 25))
+
+## Quantiles on growth rates
+seir_gr_quants <- dat_inc %>% group_by(t) %>%
+  summarize(lower_95=quantile(gr, 0.025, na.rm=TRUE),
+            lower_50=quantile(gr, 0.25, na.rm=TRUE),
+            median = median(gr, na.rm=TRUE),
+            upper_50 = quantile(gr, 0.75, na.rm=TRUE),
+            upper_95 = quantile(gr, 0.975, na.rm=TRUE)) %>%
+  mutate(variable="Daily growth rate")
+
+SEIR_Res <- bind_rows(quants_inc,quants_R,seir_gr_quants) 
+SEIR_Res <- SEIR_Res %>%
+  mutate(Sim=Sim, TestDay=Days, TestProbs=Probs,total_prob=total_prob,model="SEIR")
+
+########################################
+## 9. Save Results
 ########################################
 total_prob_name <- gsub("[.]","",as.character(total_prob))
-save(list=c("Cts_Full","R_Ests_Full","True_SEIR_sim","SEEIRR_Res"), file=paste0(results_wd,"/Sim_viro_pop",pop_no,"_",Days,"", Probs,"",total_prob_name,".Rda"))
+save(list=c("Cts_Full","R_Ests_Full","True_SEIR_sim","SEEIRR_Res","SEIR_Res"), file=paste0(results_wd,"/Sim_viro_pop",pop_no,"_",Days,"", Probs,"",total_prob_name,".Rda"))
