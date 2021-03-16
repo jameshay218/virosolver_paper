@@ -27,7 +27,7 @@ library(doParallel)
 # library(lazymcmc) devtools::install_github("jameshay218/lazymcmc) ## Note that in this script, the parallel tempering version is used. See README
 
 HOME_WD <- "~"
-HOME_WD <- "~/Documents/GitHub/"
+#HOME_WD <- "~/Documents/GitHub/"
 devtools::load_all(paste0(HOME_WD,"/virosolver"))
 devtools::load_all(paste0(HOME_WD,"/lazymcmc"))
 
@@ -94,7 +94,7 @@ n_samp <- 200 ## Number of posterior samples for plots
 
 ## Set Simulation Number and get sim settings
 Sim <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
-Sim <- 1
+#Sim <- 1
 print(paste0("Starting Simulation Number: ",Sim))
 
 ## Name of this run
