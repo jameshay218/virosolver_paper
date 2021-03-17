@@ -12,6 +12,9 @@ library(lazymcmc) ## devtools::install_github("jameshay218/lazymcmc")
 library(doParallel)
 devtools::load_all("~/Documents/GitHub/virosolver")
 
+## Set flag to write plots to disk or not
+save_plots <- FALSE
+
 ## CHANGE TO MAIN WD
 main_wd <- "~/Documents/GitHub/virosolver_paper/"
 setwd(main_wd)
@@ -617,14 +620,14 @@ p_grs <- ggplot() +
 ########################################
 ## 9. Pull together
 ########################################
-if(TRUE){
-pdf("figures/Figure3.pdf",height=6,width=9)
-(((p1/p_dat/((ps_all_daily | plot_spacer()))/p_inc) + plot_layout(heights=c(4,3.5,0.5,4))) | (((plot_spacer()|p_rt)+plot_layout(widths=c(1,50)))/p_use_dial/p_grs)) + plot_layout(widths=c(2,1))
-dev.off()
-
-png("figures/Figure3.png",height=6,width=9,units="in",res=300)
-(((p1/p_dat/((ps_all_daily | plot_spacer()))/p_inc) + plot_layout(heights=c(4,3.5,0.5,4))) | (((plot_spacer()|p_rt)+plot_layout(widths=c(1,50)))/p_use_dial/p_grs)) + plot_layout(widths=c(2,1))
-dev.off()
+if(save_plots){
+  pdf("figures/Figure3.pdf",height=6,width=9)
+  (((p1/p_dat/((ps_all_daily | plot_spacer()))/p_inc) + plot_layout(heights=c(4,3.5,0.5,4))) | (((plot_spacer()|p_rt)+plot_layout(widths=c(1,50)))/p_use_dial/p_grs)) + plot_layout(widths=c(2,1))
+  dev.off()
+  
+  png("figures/Figure3.png",height=6,width=9,units="in",res=300)
+  (((p1/p_dat/((ps_all_daily | plot_spacer()))/p_inc) + plot_layout(heights=c(4,3.5,0.5,4))) | (((plot_spacer()|p_rt)+plot_layout(widths=c(1,50)))/p_use_dial/p_grs)) + plot_layout(widths=c(2,1))
+  dev.off()
 }
 
 
@@ -899,8 +902,10 @@ for(i in seq(2,length(obs_times),by=1)){
 }
 
 test_p <- (supp_ps_all_daily_prior) | (supp_ps_all_daily)  |  (supp_ps_all_average) | (supp_ps_all_daily_prior_broad) | (supp_ps_all_daily_alt)
-ggsave("figures/supplement/all_dials.png",test_p,width=3.2,height=8,dpi=300,units="in")
-ggsave("figures/supplement/all_dials.pdf",test_p,width=3.2,height=8,units="in")
+if(save_plots){
+  ggsave("figures/supplement/all_dials.png",test_p,width=3.2,height=8,dpi=300,units="in")
+  ggsave("figures/supplement/all_dials.pdf",test_p,width=3.2,height=8,units="in")
+}
 
 supp_ps_all_daily_alt_horiz <- ps_daily_alt[[1]] + 
   theme(plot.tag = element_text(family="sans",size=10,face="bold")) +
@@ -993,9 +998,11 @@ supp_traces <- chain1[,c("sampno",unique(parTab_seir[which(parTab_seir$fixed == 
   labs(tag="D")
 
 figS12 <- (supp_ps_all_daily_alt_horiz) / ((supp_p_use_dial_left) | (supp_p_use_dial_right)) / (supp_p_traj) / (supp_traces) + plot_layout(heights=c(0.5,3,4,3))
-ggsave("figures/supplement/figS12.png",figS12,width=7,height=8,dpi=300,units="in")
-ggsave("figures/supplement/figS12.pdf",figS12,width=7,height=8,units="in")
 
+if(save_plots){
+  ggsave("figures/supplement/figS12.png",figS12,width=7,height=8,dpi=300,units="in")
+  ggsave("figures/supplement/figS12.pdf",figS12,width=7,height=8,units="in")
+}
 
 ########################################
 ## 11. Biobot data
@@ -1039,7 +1046,7 @@ p_biobot <- ggplot(biobot_dat %>% filter(date <= "2020-12-01") %>% mutate(system
 p_biobot  
   
 fig_S_biobot <-p_biobot/p_inc_biobot
-if(FALSE){
+if(save_plots){
   pdf("figures/supplement/biobot.pdf",height=5,width=7)
   fig_S_biobot
   dev.off()
