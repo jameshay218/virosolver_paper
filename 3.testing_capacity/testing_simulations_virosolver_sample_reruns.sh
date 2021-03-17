@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J TESTING_SAMPLE_SIZE_RERUNS
+#SBATCH -J TESTING_SAMPLE_SIZE_RERUNS2
 #SBATCH -n 4                # Number of cores (-n)
 #SBATCH -N 1                # Ensure that all cores are on one Node (-N)
 #SBATCH -t 1-23:59          # Runtime in D-HH:MM, minimum of 10 minutes
