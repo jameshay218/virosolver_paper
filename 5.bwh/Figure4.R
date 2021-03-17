@@ -1057,7 +1057,31 @@ if(save_plots){
 
 
 
+## Pulling out growth rates for comparison
+grs_daily_comb <- do.call("bind_rows",grs_daily)
+grs_daily_comb$date <- as.Date(grs_daily_comb$t,origin="2020-03-08")
 
-
-
+p_grs_compare <- ggplot() + 
+  geom_ribbon(data=trajs_dat_top,aes(x=date,ymin=lower,ymax=upper),alpha=0.25,fill=AAAS_palette["purple1"]) +
+  geom_ribbon(data=trajs_dat_bot,aes(x=date,ymin=lower,ymax=upper),alpha=0.25,fill=AAAS_palette["purple1"]) +
+  geom_line(data=trajs_dat_median,aes(x=date,y=median,col=is_grow,group=index)) +
+  geom_errorbar(data=grs_daily_comb,aes(x=date,ymin=lower95,ymax=upper95,col="Cross-sectional estimate"),width=3,alpha=0.25) +
+  geom_errorbar(data=grs_daily_comb,aes(x=date,ymin=lower50,ymax=upper50,col="Cross-sectional estimate"),width=1.5) +
+  geom_point(data=grs_daily_comb,aes(x=date,y=median,col="Cross-sectional estimate"),size=1) +
+  coord_cartesian(ylim=c(-0.5,0.5)) +
+  scale_x_date(expand=c(0,0),limits=as.Date(c("2020-03-01", "2020-12-01"), "%Y-%m-%d"), 
+               breaks="1 month") +
+  geom_hline(yintercept=0,linetype="dashed",col=AAAS_palette["grey1"]) +
+  scale_color_manual(values=c("Cross-sectional estimate"=as.character(AAAS_palette["green1"]),
+                              "Ct estimate"=as.character(AAAS_palette["purple1"])))+
+  export_theme +
+  theme(legend.position=c(0.2,0.9),
+        legend.title = element_blank(),
+        axis.text.x=element_text(size=6),
+        legend.text=element_text(size=6),
+        plot.margin=unit(c(0.5,1,0.5,0.5),units="cm")) +
+  xlab("Date") +
+  ylab("Growth rate") 
+ggsave(plot=p_grs_compare,filename="figures/supplement/bwh_growths_compare.png",height=4,width=7,units="in",dpi=300)
+ggsave(plot=p_grs_compare,filename="figures/supplement/bwh_growths_compare.pdf",height=4,width=7,units="in",dpi=300)
 

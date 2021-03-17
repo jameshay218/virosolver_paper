@@ -27,12 +27,12 @@ devtools::load_all(paste0(HOME_WD,"lazymcmc"))
 ## Arguments for this run
 set.seed(1)
 n_samp <- 1000
-runname <- "ma_seir_prior"
+runname <- "ma_seir_constrained2"
 run_version <- "seir" ##gp, seir or exp##
 
 ## IMPORTANT - change this flag to TRUE if running the MCMC for the first time
 rerun_mcmc <- TRUE
-solve_likelihood <- FALSE
+solve_likelihood <- TRUE
 
 ## CHANGE TO MAIN WD
 ## Important to set this to the full file path, as on L205 the foreach loop
@@ -43,14 +43,14 @@ plot_wd <- paste0(HOME_WD, "/virosolver_paper/plots/5.real_ma_single_timepoint/"
 setwd(main_wd)
 
 ## Manage MCMC runs and parallel runs
-nchains <- 3
+nchains <- 1
 n_clusters <- 11
 cl <- parallel::makeCluster(n_clusters, setup_strategy = "sequential")
 registerDoParallel(cl)
 
 ## MCMC parameters for Ct model fits
 ## MCMC control parameters
-n_temperatures <- 10
+n_temperatures <- 3
 mcmcPars_ct <- list("iterations"=50000,"popt"=0.44,"opt_freq"=1000,
                  "thin"=10,"adaptive_period"=30000,"save_block"=1000,"temperature" = seq(1,101,length.out=n_temperatures),
                  "parallel_tempering_iter" = 5,"max_adaptive_period" = 30000, 
@@ -112,8 +112,9 @@ obs_dat1 <-  obs_dat_all %>%
   rename(date=coll_date) %>%
   left_join(epi_calendar) %>%
   dplyr::select(first_day,  panther_Ct, id) %>%
-  mutate(first_day = as.numeric(first_day)) %>%
-  mutate(first_day = first_day - min(first_day) + 35) %>% ## Start 35 days before first sample
+  mutate(earliest_date=as.Date("2020-02-01")) %>%
+  #mutate(first_day = as.numeric(first_day)) %>%
+  mutate(first_day = as.numeric(first_day - earliest_date)) %>% ## Assume 1st February is start date
   arrange(first_day) %>%
   rename(t = first_day, ct=panther_Ct)
 
@@ -196,7 +197,7 @@ if(rerun_mcmc){
     
     samp_time <- as.Date(min(c(obs_dat_use$t)),origin="2020-02-01")
     
-    if(FALSE){
+    if(TRUE){
       if(samp_time < as.Date("2020-06-01")){
         start_min <- as.Date("2020-02-01")
         start_max <- as.Date("2020-03-01")
@@ -210,7 +211,7 @@ if(rerun_mcmc){
       parTab[parTab$names == "t0",c("lower_bound","lower_start")] <- as.numeric(start_min - as.Date("2020-02-01"))
       parTab[parTab$names == "t0",c("upper_bound","upper_start")] <- as.numeric(start_max - as.Date("2020-02-01"))
     }
-    parTab[parTab$names == "t0",c("upper_bound","upper_start")] <- min(obs_dat_use$t) - 7
+    #parTab[parTab$names == "t0",c("upper_bound","upper_start")] <- min(obs_dat_use$t) - 7
     
     
     chains <- NULL
@@ -231,7 +232,7 @@ if(rerun_mcmc){
                                                       prior_func_use,
                                                       t_dist=NULL,
                                                       use_pos=TRUE)
-          startTab[[k]][startTab[[k]]$names == "t0",c("upper_bound","upper_start")] <- min(obs_dat_use$t) - 7
+          #startTab[[k]][startTab[[k]]$names == "t0",c("upper_bound","upper_start")] <- min(obs_dat_use$t) - 14
           #startTab[[k]][startTab[[k]]$names == "t0",c("lower_bound","lower_start")] <- as.numeric(start_min - as.Date("2020-02-01"))
           #startTab[[k]][startTab[[k]]$names == "t0",c("upper_bound","upper_start")] <- as.numeric(start_max - as.Date("2020-02-01"))
         }

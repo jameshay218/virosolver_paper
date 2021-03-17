@@ -201,7 +201,7 @@ if(rerun_mcmc){
     chain <- do.call("bind_rows",chains)
   } 
 }
-source("scripts/5.add_prior.R")
+source("5.bwh/5.add_prior.R")
 chains_diag <- lazymcmc::load_mcmc_chains(chainwd, parTab,TRUE,1,mcmcPars_ct["adaptive_period"],
                                           multi=FALSE,chainNo=FALSE,PTchain = FALSE)
 
