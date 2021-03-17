@@ -52,7 +52,7 @@ plot_wd <- paste0(HOME_WD, "/virosolver_paper/plots/ReportSims/Symptom_new")
 plot_wd_seeirr  <- paste0(HOME_WD, "/virosolver_paper/plots/ReportSims/SEEIRR")
 plot_wd_seir  <- paste0(HOME_WD, "/virosolver_paper/plots/ReportSims/SEIR")
 data_wd <- paste0(HOME_WD, "/virosolver_paper/data/ReportSims/Symptom")
-results_wd <- paste0(HOME_WD, "/virosolver_paper/results/ReportSims/Symptom_new/virosolver/")
+results_wd <- paste0(HOME_WD, "/virosolver_paper/results/ReportSims/Symptom_new/virosolver_rerun2/")
 
 if(!file.exists(chainwd)) dir.create(chainwd,recursive = TRUE)
 if(!file.exists(chainwd_seeirr)) dir.create(chainwd_seeirr,recursive = TRUE)
@@ -144,6 +144,32 @@ reruns <- c(13L, 14L, 20L, 60L, 73L, 75L, 79L, 81L, 85L, 114L, 120L, 133L,
             5786L, 5807L, 5814L, 5833L, 5834L, 5839L, 5840L, 5861L, 5894L, 
             5899L, 5900L, 5905L, 5934L, 5947L, 5953L, 5957L, 5959L, 5960L, 
             5961L, 5965L, 5966L, 5985L)
+rerun_again <- c(1L, 3L, 5L, 7L, 9L, 12L, 13L, 14L, 16L, 17L, 18L, 19L, 20L, 
+                 27L, 28L, 30L, 34L, 36L, 37L, 39L, 42L, 45L, 49L, 50L, 52L, 53L, 
+                 54L, 56L, 57L, 58L, 59L, 62L, 63L, 65L, 66L, 67L, 71L, 73L, 75L, 
+                 76L, 77L, 78L, 80L, 82L, 86L, 88L, 89L, 93L, 94L, 95L, 96L, 98L, 
+                 99L, 100L, 103L, 105L, 108L, 111L, 113L, 116L, 121L, 122L, 123L, 
+                 131L, 133L, 139L, 142L, 146L, 149L, 151L, 153L, 154L, 155L, 159L, 
+                 160L, 161L, 162L, 164L, 167L, 169L, 170L, 174L, 177L, 178L, 183L, 
+                 184L, 185L, 186L, 187L, 189L, 192L, 193L, 195L, 198L, 202L, 205L, 
+                 207L, 208L, 211L, 212L, 213L, 218L, 219L, 224L, 225L, 228L, 230L, 
+                 232L, 233L, 234L, 235L, 236L, 237L, 241L, 242L, 243L, 245L, 250L, 
+                 251L, 252L, 253L, 255L, 257L, 261L, 263L, 265L, 268L, 271L, 272L, 
+                 275L, 276L, 278L, 279L, 281L, 284L, 285L, 286L, 287L, 288L, 290L, 
+                 292L, 293L, 294L, 297L, 298L, 299L, 301L, 303L, 304L, 307L, 309L, 
+                 315L, 316L, 317L, 318L, 321L, 322L, 324L, 326L, 327L, 329L, 330L, 
+                 335L, 338L, 341L, 345L, 346L, 347L, 348L, 350L, 351L, 357L, 359L, 
+                 360L, 361L, 363L, 364L, 366L, 367L, 375L, 377L, 379L, 380L, 382L, 
+                 384L, 390L, 391L, 392L, 395L, 396L, 399L, 401L, 403L, 404L, 405L, 
+                 408L, 411L, 412L, 413L, 414L, 415L, 416L, 418L, 419L, 420L, 424L, 
+                 431L, 432L, 434L, 437L, 438L, 440L, 442L, 444L, 445L, 447L, 453L, 
+                 454L, 456L, 457L, 459L, 460L, 465L, 466L, 467L, 468L, 473L, 474L, 
+                 478L, 480L, 482L, 486L, 487L, 491L, 497L, 498L, 499L, 505L, 507L, 
+                 510L, 512L, 513L, 517L, 518L, 522L, 527L, 529L, 534L, 535L, 536L, 
+                 537L, 538L, 542L, 549L, 550L, 551L, 552L, 554L, 555L, 556L, 560L, 
+                 561L, 562L, 564L, 565L, 569L, 571L, 573L, 574L, 576L, 579L, 580L, 
+                 581L, 582L, 585L, 586L, 587L, 592L, 596L)
+reruns <- reruns[rerun_again]
 control_table <- control_table[reruns,]
 
 n_temperatures <- 5

@@ -7,7 +7,7 @@
 #SBATCH --mem=16000           # Memory pool for all cores (see also --mem-per-cpu)
 #SBATCH -o jobmessages/job%j-%a.out
 #SBATCH -e jobmessages/jobERR%j-%a.out
-#SBATCH --array=1-597
+#SBATCH --array=1-279
 echo $SLURM_ARRAY_TASK_ID
 
 mkdir -p jobout/${SLURM_JOB_NAME}
