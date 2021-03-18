@@ -33,14 +33,17 @@ source(paste0(HOME_WD,"/virosolver_paper/code/odin_funcs.R"))
 ## MCMC parameters for Ct model fits
 mcmcPars_ct <- c("iterations"=700000,"popt"=0.44,"opt_freq"=5000,
                  "thin"=200,"adaptive_period"=300000,"save_block"=10000)
+#mcmcPars_ct <- c("iterations"=70000,"popt"=0.44,"opt_freq"=500,
+#                                  "thin"=20,"adaptive_period"=30000,"save_block"=10000)
 
 ## Arguments for this run, controlled by a csv file
 control_table <- read_csv(paste0(HOME_WD,"/virosolver_paper/pars/massachusetts/sim_ma_control_late.csv"))
+#control_table <- read_csv(paste0(HOME_WD,"/virosolver_paper/pars/massachusetts/sim_ma_control_local_late.csv"))
 #control_table <- readxl::read_excel(paste0(HOME_WD,"/virosolver_paper/pars/massachusetts/sim_ma_control.xlsx"))
 
 ## Get task ID, used to read options from control table
 simno <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
-
+#simno <- 6
 ## Set random seed
 set.seed(simno)
 
@@ -109,10 +112,6 @@ names(means) <- parTab$names
 ## Read in Ct data
 obs_dat <- read_csv(data_file_cts)
 
-## Only take samples after day 100ish
-obs_dat <- obs_dat %>% filter(t > 90)
-obs_dat <- obs_dat %>% mutate(t = t - min(t) + 35)
-
 ## Get possible observation times
 obs_times <- unique(obs_dat$t)
 
@@ -134,6 +133,13 @@ if(use_pos) {
 if(!is.na(age_max)){
   obs_dat_use <- obs_dat_use %>% mutate(t = t - min(t),t = t + max_age)
 }
+
+## Only take samples after day 100ish
+obs_dat <- obs_dat %>% filter(t > 90)
+t_shift <- min(obs_dat$t) - 35
+obs_dat <- obs_dat %>% mutate(t = t - min(t) + 35)
+obs_dat_use <- obs_dat_use %>% filter(t > 90)
+obs_dat_use <- obs_dat_use %>% mutate(t = t - min(t) + 35)
 
 ## Vectors of times/infection ages for ismulation
 ages <- 1:max(obs_dat_use$t)
@@ -232,21 +238,23 @@ colnames(trajs_quants) <- c("lower","median","upper","t")
 
 ## Ct distribution plot
 p_dat <- ggplot(obs_dat_use %>% filter(ct < pars["intercept"])) + 
-  geom_violin(aes(x=t,group=t,y=ct),scale="width",fill="grey70",draw_quantiles=c(0.025,0.5,0.975)) + 
+  geom_violin(aes(x=t+t_shift,group=t,y=ct),scale="width",fill="grey70",draw_quantiles=c(0.025,0.5,0.975)) + 
   scale_y_continuous(trans="reverse") +
   export_theme +
   scale_x_continuous(limits=c(0,200))
 
 ## Incidence rate plot
-p_inc <- ggplot(trajs_quants) + geom_ribbon(aes(x=t,ymin=lower,ymax=upper),alpha=0.25) + 
-  geom_line(aes(x=t,y=median)) + 
-  geom_line(data=tibble(t=times,y=inc_func_use(get_best_pars(chain_comb),times)),aes(x=t,y=y),col="green") +
+p_inc <- ggplot(trajs_quants) + 
+  geom_ribbon(aes(x=t+t_shift,ymin=lower,ymax=upper),alpha=0.25) + 
+  geom_line(aes(x=t+t_shift,y=median)) + 
+  #geom_line(data=inc %>% drop_na(),aes(x=infection_time,y=n/1000000),col="red") +
+  #geom_line(data=tibble(t=times,y=inc_func_use(get_best_pars(chain_comb),times)),aes(x=t,y=y),col="green") +
   #geom_line(data=tibble(t=1:200,y=(seir_dynamics$incidence/population_n)[1:200]),aes(x=t,y=y),col="red") +
   export_theme +
   ylab("Per capita incidence") +
   xlab("Days since start") +
-  scale_x_continuous(limits=c(0,220)) +
-  coord_cartesian(ylim=c(0,0.03))
+  scale_x_continuous(limits=c(0,220))# +
+  #coord_cartesian(ylim=c(0,0.03))
 
 ## Get viral load trajectories
 ages1 <- 1:50
