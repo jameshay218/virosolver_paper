@@ -19,20 +19,28 @@ save_plots <- FALSE
 main_wd <- "~/Documents/GitHub/virosolver_paper/"
 setwd(main_wd)
 source("code/plot_funcs.R")
+
 export_theme <- export_theme + theme(plot.margin=unit(c(0,0,0,0),units="cm"),plot.tag=element_text(size=10,face="bold"))
+
+
 ## Arguments for this run
 set.seed(1)
 n_samp <- 1000
-obs_times <- c(35, 42, 49, 56, 63, 70, 77, 84, 91, 98, 105, 112, 119, 126, 
-  133, 140, 147, 154, 161, 168, 175)
+## How dates translate to observation times, GP model
 obs_times <- c(35, 42, 49, 56, 63, 70, 77, 84, 91, 98, 105, 112, 119, 126, 
                133, 140, 147, 154, 161, 168, 175, 182, 189, 196, 203, 210, 217, 
                224, 231, 238, 245)
-runname_seir <- "ma_seir_constrained"
+## In SEIR cross section fits, times are shifted differently
+seir_timeshift <- 36
+
+## Run names for the various MCMC chains
+runname_seir <- "ma_seir_constrained2"
 runname_seir_prior <- "ma_seir_constrained_prior"
 runname_seir_prior_broad <- "ma_seir_prior"
 runname_seir_alt <- "ma_seir"
 runname_exp <- "ma_exp"
+
+## Where the MCMC chains are stored
 chainwd <- paste0("~/Documents/GitHub/virosolver_paper/mcmc_chains/5.real_ma_single_timepoint/")
 chainwd_gp <- paste0("~/Documents/GitHub/virosolver_paper/mcmc_chains/4.real_ma_ct/ma_gp/")
 
@@ -60,9 +68,8 @@ res_seir_prior_broad <- NULL
 
 for(i in seq_along(obs_times)){
   timepoint <- obs_times[i]
-  
   ## Read in SEIR chains
-  chainwd_tmp <- paste0(chainwd,"/",runname_seir,"/",timepoint)
+  chainwd_tmp <- paste0(chainwd,"/",runname_seir,"/",timepoint + seir_timeshift)
   chain_seir <- load_mcmc_chains(chainwd_tmp, parTab,FALSE,1, mcmcPars_ct_seir["adaptive_period"],
                                  multi=TRUE,chainNo=TRUE,PTchain = TRUE)$chain
   chain_seir <- as.data.frame(chain_seir)
@@ -176,10 +183,6 @@ obs_dat_all <- read_csv("~/Documents/GitHub/ct_inference_preprint/data/BWH_COVID
 obs_dat_all <- read_csv("data/panther_Ct_20200403-20201110.csv") %>% rename(panther_Ct=ORF1ab_Ct) %>%
   mutate(platform="Panther",first_pos=1) %>%
   mutate(id=1:n())
-#obs_dat_all <- read_csv("data/panther_Ct_20200403-20201110.csv") %>% rename(panther_Ct=ORF1ab_Ct) %>%
-#  mutate(platform="Panther",first_pos=1) %>%
-#  mutate(id=1:n())
-obs_dat1 <- obs_dat_all
 
 obs_dat1 <-  obs_dat_all %>% 
   filter(platform=="Panther" &
@@ -190,6 +193,8 @@ obs_dat1 <-  obs_dat_all %>%
   dplyr::select(first_day,  panther_Ct, id) %>%
   mutate(first_day = as.numeric(first_day)) %>%
   mutate(first_day = first_day - min(first_day) + 35) %>% ## Start 35 days before first sample
+  #mutate(earliest_date=as.Date("2020-02-01")) %>%
+  #mutate(first_day = as.numeric(first_day - earliest_date)) %>% ## Assume 1st February is start date
   arrange(first_day) %>%
   rename(t = first_day, ct=panther_Ct)
 
@@ -313,8 +318,9 @@ for(i in seq_along(obs_times)){
   runname_use_seir <- runname_seir
   runname_use_exp <- runname_exp
   
-  obs_dat_tmp <- obs_dat_use <- obs_dat1 %>% filter(t == timepoint)
+  obs_dat_tmp <- obs_dat_use <- obs_dat1 %>% filter(t == timepoint) 
   obs_dat_seir <- obs_dat_exp <- obs_dat_use
+  obs_dat_seir <- obs_dat_seir %>% mutate(t=t+seir_timeshift)
   
   ## Observation times
   obs_dat_exp <- obs_dat_exp %>% mutate(t = t - min(t), t = t + 35)
@@ -440,7 +446,7 @@ for(i in seq_along(obs_times)){
   chain1_exp <- chain_exp
   chain_comb_exp <- chain_comb_exp[,colnames(chain_comb_exp) != "chain"]
   
-  grs_daily[[i]] <- trajs1_quants[nrow(trajs1_quants),]
+  grs_daily[[i]] <- trajs1_quants[nrow(trajs1_quants),] %>% mutate(t=t-seir_timeshift)
   grs_average[[i]] <- c(quantile(chain_comb_exp$beta, c(0.025,0.25,0.5,0.75,0.975)),timepoint)
   
   prop_grow_daily[[i]] <- sum(trajs1[,ncol(trajs1)] > 0)/nrow(trajs1)
