@@ -1,3 +1,8 @@
+## IMPORTANT NOTE: the single cross section SEIR models are indexed from 1st February, so t[0] = 1st February there.
+## The exponential and GP models are indexed from 35 days prior to the first sampling time. So all SEIR model times are 36
+## days after the exp and GP models. HOWEVER, we index obs_dat based on the exponential and GP models. This is why
+## you will see some times as 35, and others as 71 referencing the same day.
+
 ########################################
 ## 1. Headers
 ########################################
@@ -34,10 +39,10 @@ obs_times <- c(35, 42, 49, 56, 63, 70, 77, 84, 91, 98, 105, 112, 119, 126,
 seir_timeshift <- 36
 
 ## Run names for the various MCMC chains
-runname_seir <- "ma_seir_constrained2"
-runname_seir_prior <- "ma_seir_constrained_prior"
-runname_seir_prior_broad <- "ma_seir_prior"
-runname_seir_alt <- "ma_seir"
+runname_seir <- "ma_seir_constrained" ## Constrained prior on seed time
+runname_seir_prior <- "ma_seir_prior_constrained"
+runname_seir_prior_broad <- "ma_seir_rerun_prior"
+runname_seir_alt <- "ma_seir_rerun" ## Less constrained prior on seed time
 runname_exp <- "ma_exp"
 
 ## Where the MCMC chains are stored
@@ -68,7 +73,7 @@ res_seir_prior_broad <- NULL
 
 for(i in seq_along(obs_times)){
   timepoint <- obs_times[i]
-  ## Read in SEIR chains
+  ## Read in SEIR chains constrained t0
   chainwd_tmp <- paste0(chainwd,"/",runname_seir,"/",timepoint + seir_timeshift)
   chain_seir <- load_mcmc_chains(chainwd_tmp, parTab,FALSE,1, mcmcPars_ct_seir["adaptive_period"],
                                  multi=TRUE,chainNo=TRUE,PTchain = TRUE)$chain
@@ -76,16 +81,16 @@ for(i in seq_along(obs_times)){
   chain_seir$sampno <- 1:nrow(chain_seir)
   res_seir[[i]] <- chain_seir
   
-  ## Read in alt SEIR chains
-  chainwd_tmp <- paste0(chainwd,"/",runname_seir_prior,"/",timepoint)
+  ## Read in SEIR chains prior
+  chainwd_tmp <- paste0(chainwd,"/",runname_seir_prior,"/",timepoint+seir_timeshift)
   chain_seir_prior <- load_mcmc_chains(chainwd_tmp, parTab,FALSE,1, mcmcPars_ct_seir["adaptive_period"],
                                  multi=TRUE,chainNo=TRUE,PTchain = TRUE)$chain
   chain_seir_prior <- as.data.frame(chain_seir_prior)
   chain_seir_prior$sampno <- 1:nrow(chain_seir_prior)
   res_seir_prior[[i]] <- chain_seir_prior
   
-  ## Read in SEIR prior chains from constrained t0
-  chainwd_tmp <- paste0(chainwd,"/",runname_seir_alt,"/",timepoint)
+  ## Read in SEIR chains from loose t0
+  chainwd_tmp <- paste0(chainwd,"/",runname_seir_alt,"/",timepoint+seir_timeshift)
   chain_seir_alt <- load_mcmc_chains(chainwd_tmp, parTab,FALSE,1, mcmcPars_ct_seir["adaptive_period"],
                                      multi=TRUE,chainNo=TRUE,PTchain = TRUE)$chain
   chain_seir_alt <- as.data.frame(chain_seir_alt)
@@ -93,7 +98,7 @@ for(i in seq_along(obs_times)){
   res_seir_alt[[i]] <- chain_seir_alt
   
   ## Read in SEIR prior chains from loose t0
-  chainwd_tmp <- paste0(chainwd,"/",runname_seir_prior_broad,"/",timepoint)
+  chainwd_tmp <- paste0(chainwd,"/",runname_seir_prior_broad,"/",timepoint+seir_timeshift)
   chain_seir_prior_broad <- load_mcmc_chains(chainwd_tmp, parTab,FALSE,1, mcmcPars_ct_seir["adaptive_period"],
                                        multi=TRUE,chainNo=TRUE,PTchain = TRUE)$chain
   chain_seir_prior_broad <- as.data.frame(chain_seir_prior_broad)
@@ -177,12 +182,10 @@ p1 <-  ggplot(nyt_dat)+
 ########################################
 ## 4. BWH Ct data
 ########################################
-obs_dat_all <- read_csv("~/Documents/GitHub/ct_inference_preprint/data/BWH_COVID_Cts_deid_20200403-20200831.csv") %>%
-  mutate(id=1:n())
-
 obs_dat_all <- read_csv("data/panther_Ct_20200403-20201110.csv") %>% rename(panther_Ct=ORF1ab_Ct) %>%
   mutate(platform="Panther",first_pos=1) %>%
-  mutate(id=1:n())
+  mutate(id=1:n()) %>%
+  filter(panther_Ct < 40)
 
 obs_dat1 <-  obs_dat_all %>% 
   filter(platform=="Panther" &
@@ -243,7 +246,6 @@ p_dat <- ggplot(obs_dat_all) +
 ## 5. Rt scatterplot
 ########################################
 ## Plot Ct data
-#bwh_data <- read_csv("~/Documents/GitHub/ct_inference_preprint/data/BWH_COVID_Cts_deid_20200403-20200831.csv")
 bwh_data <- read_csv("data/panther_Ct_20200403-20201110.csv") %>% rename(panther_Ct=ORF1ab_Ct) %>%
   mutate(platform="Panther",first_pos=1) %>%
   mutate(id=1:n())
@@ -348,10 +350,10 @@ for(i in seq_along(obs_times)){
   trajs <- matrix(0, nrow=n_samp,ncol=length(times_seir))
   t0s <- NULL
   for(k in seq_along(samps)){
-    trajs[k,] <- pmax(solveSEIRModel_rlsoda_wrapper(get_index_pars(chain_comb_seir, samps[k]),times_seir),0.0000001)
+    trajs[k,] <- pmax(solveSEIRModel_rlsoda_wrapper(get_index_pars(chain_comb_seir, samps[k]),times_seir),0)
     t0s[k] <- get_index_pars(chain_comb_seir, samps[k])["t0"]
   }
-  
+  #trajs <- t(apply(trajs,1,function(x) x/sum(x)))
   trajs_dat <- data.frame(trajs)
   colnames(trajs_dat) <- times_seir
   trajs_dat$samp <- 1:nrow(trajs_dat)
@@ -367,14 +369,14 @@ for(i in seq_along(obs_times)){
   trajs1 <- t(apply(trajs, 1, function(x) log(x[2:length(x)]/x[1:(length(x)-1)])))
   trajs1[trajs1 < -0.5] <- -0.5
   trajs1[trajs1 > 0.5] <- 0.5
-  trajs1_quants <- t(apply(trajs1, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975))))
+  trajs1_quants <- t(apply(trajs1, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975),na.rm=TRUE)))
   trajs1_quants <- as.data.frame(trajs1_quants)
   trajs1_quants$t <- 1:nrow(trajs1_quants)
   colnames(trajs1_quants) <- c("lower95","lower50","median","upper50","upper95","t")
   
   tmp_beta <- trajs1[,ncol(trajs1)]
   beta_quants <- cbind(seq(0.05,0.95,by=0.01), t(sapply(seq(0.05,0.95,by=0.01), 
-                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2)))))
+                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2),na.rm=TRUE))))
   
   dats_all <- NULL
   p_daily <- ggplot() +
@@ -394,7 +396,7 @@ for(i in seq_along(obs_times)){
     p_daily <- p_daily + geom_polygon(data=tmp,aes(x=x,y=y),alpha=0.05,fill=AAAS_palette["blue1"])
   }
   
-  med_segment <- quantile(tmp_beta, 0.5)
+  med_segment <- quantile(tmp_beta, 0.5,na.rm=TRUE)
   ps_daily[[i]] <-  p_daily + scale_y_continuous(limits=c(-0.5,0.5)) +
     geom_segment(data=data.frame(y=0,yend=beta_max*sin(pi*med_segment),x=0,xend=beta_max*cos(pi*med_segment)),
                  aes(x=x,y=y,xend=xend,yend=yend),
@@ -408,7 +410,7 @@ for(i in seq_along(obs_times)){
   
   tmp_beta <- chain_comb_exp$beta
   beta_quants <- cbind(seq(0.05,0.95,by=0.01), t(sapply(seq(0.05,0.95,by=0.01), 
-                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2)))))
+                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2),na.rm=TRUE))))
   ## Average growth rates
   p_average <- ggplot() +
     geom_polygon(data=overall_circle_top, aes(x=x,y=y),fill="darkorange",alpha=0.25) +
@@ -427,7 +429,7 @@ for(i in seq_along(obs_times)){
     p_average <- p_average + geom_polygon(data=tmp,aes(x=x,y=y),alpha=0.05,fill=AAAS_palette["teal1"])
   }
   
-  med_segment <- quantile(tmp_beta, 0.5)
+  med_segment <- quantile(tmp_beta, 0.5,na.rm=TRUE)
   ps_average[[i]] <-  p_average + 
     scale_y_continuous(limits=c(-0.5,0.5)) +
     geom_segment(data=data.frame(y=0,yend=beta_max*sin(pi*med_segment),x=0,xend=beta_max*cos(pi*med_segment)),
@@ -447,7 +449,7 @@ for(i in seq_along(obs_times)){
   chain_comb_exp <- chain_comb_exp[,colnames(chain_comb_exp) != "chain"]
   
   grs_daily[[i]] <- trajs1_quants[nrow(trajs1_quants),] %>% mutate(t=t-seir_timeshift)
-  grs_average[[i]] <- c(quantile(chain_comb_exp$beta, c(0.025,0.25,0.5,0.75,0.975)),timepoint)
+  grs_average[[i]] <- c(quantile(chain_comb_exp$beta, c(0.025,0.25,0.5,0.75,0.975),na.rm=TRUE),timepoint)
   
   prop_grow_daily[[i]] <- sum(trajs1[,ncol(trajs1)] > 0)/nrow(trajs1)
   prop_grow_average[[i]] <- sum(chain_comb_exp$beta > 0)/nrow(chain_comb_exp)
@@ -458,7 +460,7 @@ trajs_dat_all_comb <- do.call("bind_rows", trajs_dat_all)
 
 ps_all_daily <- ps_daily[[1]] + 
   #geom_hline(yintercept = 0,linetype="dashed",size=0.5,color="grey40") +
-  theme(plot.tag = element_text(family="sans",size=10)) +
+  theme(plot.tag = element_text(family="sans",size=10,face="bold")) +
   labs(tag="E")
 ps_all_average <- ps_average[[1]] + 
   #geom_hline(yintercept = 0,linetype="dashed",size=0.5,color="grey40") +
@@ -515,13 +517,13 @@ times <- 0:max(obs_dat1$t)
 samps <- sample(unique(chain_comb$sampno),n_samp)
 gp_trajs <- matrix(0, nrow=n_samp,ncol=length(times))
 for(ii in seq_along(samps)){
-  tmp <- pmax(smooth.spline(gaussian_process_model(get_index_pars(chain_comb, samps[ii]),times))$y,0.0000001)
+  tmp <- pmax(smooth.spline(gaussian_process_model(get_index_pars(chain_comb, samps[ii]),times))$y,0)
   gp_trajs[ii,] <- tmp/sum(tmp)
   #trajs[ii,] <- pmax(inc_func_use(get_index_pars(chain_comb, samps[ii]),times),0.0000001)
 }
 
 gp_trajs1 <- t(apply(gp_trajs, 1, function(x) log(x[2:length(x)]/x[1:(length(x)-1)])))
-gp_trajs1_quants <- t(apply(gp_trajs1, 2, function(x) quantile(x,c(0.025,0.5,0.975))))
+gp_trajs1_quants <- t(apply(gp_trajs1, 2, function(x) quantile(x,c(0.025,0.5,0.975),na.rm=TRUE)))
 gp_trajs1_quants <- as.data.frame(gp_trajs1_quants)
 gp_trajs1_quants$t <- 1:nrow(gp_trajs1_quants)
 colnames(gp_trajs1_quants) <- c("lower","median","upper","t")
@@ -532,7 +534,7 @@ p_gr <- ggplot(trajs1_quants) + geom_ribbon(aes(x=t,ymin=lower,ymax=upper),alpha
   coord_cartesian(ylim=c(-0.5,0.5))
 
 
-gp_trajs_quants <- t(apply(gp_trajs, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975))))
+gp_trajs_quants <- t(apply(gp_trajs, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975),na.rm=TRUE)))
 gp_trajs_quants <- as.data.frame(gp_trajs_quants)
 gp_trajs_quants$t <- 1:nrow(gp_trajs_quants)
 colnames(gp_trajs_quants) <- c("lower","mid_lower","median","mid_upper","upper","t")
@@ -545,12 +547,12 @@ p_inc <- ggplot(gp_trajs_quants %>% left_join(date_key)) +
   #geom_line(data=tibble(t=times,y=inc_func_use(get_best_pars(chain_comb),times)),aes(x=t,y=y),col="green") +
   #geom_line(data=tibble(t=1:200,y=(seir_dynamics$incidence/population_n)[1:200]),aes(x=t,y=y),col="red") +
   export_theme +
-  ylab("Relative probability of infection") +
+  ylab("Scaled probability of infection") +
   xlab("Date") +
   scale_x_date(limits=as.Date(c("2020-04-01","2020-11-15")),breaks="1 month",expand=c(0,0)) +
   coord_cartesian(ylim=c(-0.0001,0.025)) +
   scale_y_continuous(expand=c(0,0)) +
-  labs(tag="F")
+  labs(tag="E")
 
 
 ########################################
@@ -621,18 +623,27 @@ p_grs <- ggplot() +
         plot.margin=unit(c(0,0,0,0),units="cm")) +
   xlab("Date") +
   ylab("Growth rate") +
-  labs(tag="G")
+  labs(tag="F")
 
 ########################################
 ## 9. Pull together
 ########################################
-if(save_plots){
-  pdf("figures/Figure3.pdf",height=6,width=9)
+if(FALSE){
+  pdf("figures/Figure4.pdf",height=6,width=9)
   (((p1/p_dat/((ps_all_daily | plot_spacer()))/p_inc) + plot_layout(heights=c(4,3.5,0.5,4))) | (((plot_spacer()|p_rt)+plot_layout(widths=c(1,50)))/p_use_dial/p_grs)) + plot_layout(widths=c(2,1))
   dev.off()
   
-  png("figures/Figure3.png",height=6,width=9,units="in",res=300)
+  png("figures/Figure4.png",height=6,width=9,units="in",res=300)
   (((p1/p_dat/((ps_all_daily | plot_spacer()))/p_inc) + plot_layout(heights=c(4,3.5,0.5,4))) | (((plot_spacer()|p_rt)+plot_layout(widths=c(1,50)))/p_use_dial/p_grs)) + plot_layout(widths=c(2,1))
+  dev.off()
+}
+if(save_plots){
+  pdf("figures/Figure4.pdf",height=6,width=9)
+  ((p1/p_dat/p_inc)| (((plot_spacer()|p_rt)+plot_layout(widths=c(1,50)))/p_use_dial/p_grs)) + plot_layout(widths=c(2,1))
+  dev.off()
+  
+  png("figures/Figure4.png",height=6,width=9,units="in",res=300)
+  ((p1/p_dat/p_inc)| (((plot_spacer()|p_rt)+plot_layout(widths=c(1,50)))/p_use_dial/p_grs)) + plot_layout(widths=c(2,1))
   dev.off()
 }
 
@@ -640,11 +651,11 @@ if(save_plots){
 ########################################
 ## 10. Alternative dials and example timepoint
 ########################################
-grs_daily_alt <- NULL
+grs_daily_alt <- NULL ## Loose prior on seed time
 prop_grow_daily_alt <- NULL
 ps_daily_alt <- NULL
-ps_daily_prior <- NULL
-ps_daily_prior_broad <- NULL
+ps_daily_prior <- NULL ## Prior on constrained seed time
+ps_daily_prior_broad <- NULL ## Prior loose seed time
 trajs_dat_all_alt <- NULL
 
 for(i in seq_along(obs_times)){
@@ -655,6 +666,7 @@ for(i in seq_along(obs_times)){
   
   obs_dat_tmp <- obs_dat_use <- obs_dat1 %>% filter(t == timepoint)
   obs_dat_seir <- obs_dat_exp <- obs_dat_use
+  obs_dat_seir <- obs_dat_seir %>% mutate(t=t+seir_timeshift)
   
   ages_seir <- 1:max(obs_dat_seir$t)
   times_seir <- 0:max(obs_dat_seir$t)
@@ -684,10 +696,10 @@ for(i in seq_along(obs_times)){
   trajs <- matrix(0, nrow=n_samp,ncol=length(times_seir))
   t0s <- NULL
   for(k in seq_along(samps)){
-    trajs[k,] <- pmax(solveSEIRModel_rlsoda_wrapper(get_index_pars(chain_comb_seir, samps[k]),times_seir),0.0000001)
+    trajs[k,] <- pmax(solveSEIRModel_rlsoda_wrapper(get_index_pars(chain_comb_seir, samps[k]),times_seir),0)
     t0s[k] <- get_index_pars(chain_comb_seir, samps[k])["t0"]
   }
-  
+  #trajs <- t(apply(trajs,1,function(x) x/sum(x)))
   trajs_dat <- data.frame(trajs)
   colnames(trajs_dat) <- times_seir
   trajs_dat$samp <- 1:nrow(trajs_dat)
@@ -703,14 +715,14 @@ for(i in seq_along(obs_times)){
   trajs1 <- t(apply(trajs, 1, function(x) log(x[2:length(x)]/x[1:(length(x)-1)])))
   trajs1[trajs1 < -0.5] <- -0.5
   trajs1[trajs1 > 0.5] <- 0.5
-  trajs1_quants <- t(apply(trajs1, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975))))
+  trajs1_quants <- t(apply(trajs1, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975),na.rm=TRUE)))
   trajs1_quants <- as.data.frame(trajs1_quants)
   trajs1_quants$t <- 1:nrow(trajs1_quants)
   colnames(trajs1_quants) <- c("lower95","lower50","median","upper50","upper95","t")
   
   tmp_beta <- trajs1[,ncol(trajs1)]
   beta_quants <- cbind(seq(0.05,0.95,by=0.01), t(sapply(seq(0.05,0.95,by=0.01), 
-                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2)))))
+                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2),na.rm=TRUE))))
   
   dats_all_alt <- NULL
   p_daily <- ggplot() +
@@ -730,7 +742,7 @@ for(i in seq_along(obs_times)){
     p_daily <- p_daily + geom_polygon(data=tmp,aes(x=x,y=y),alpha=0.05,fill=AAAS_palette["red1"])
   }
   
-  med_segment <- quantile(tmp_beta, 0.5)
+  med_segment <- quantile(tmp_beta, 0.5,na.rm=TRUE)
   ps_daily_alt[[i]] <-  p_daily + scale_y_continuous(limits=c(-0.5,0.5)) +
     geom_segment(data=data.frame(y=0,yend=beta_max*sin(pi*med_segment),x=0,xend=beta_max*cos(pi*med_segment)),
                  aes(x=x,y=y,xend=xend,yend=yend),
@@ -752,10 +764,10 @@ for(i in seq_along(obs_times)){
   trajs <- matrix(0, nrow=n_samp,ncol=length(times_seir))
   t0s <- NULL
   for(k in seq_along(samps)){
-    trajs[k,] <- pmax(solveSEIRModel_rlsoda_wrapper(get_index_pars(chain_comb_prior, samps[k]),times_seir),0.0000001)
+    trajs[k,] <- pmax(solveSEIRModel_rlsoda_wrapper(get_index_pars(chain_comb_prior, samps[k]),times_seir),0)
     t0s[k] <- get_index_pars(chain_comb_prior, samps[k])["t0"]
   }
-  
+  #trajs <- t(apply(trajs,1,function(x) x/sum(x)))
   trajs_dat <- data.frame(trajs)
   colnames(trajs_dat) <- times_seir
   trajs_dat$samp <- 1:nrow(trajs_dat)
@@ -771,14 +783,14 @@ for(i in seq_along(obs_times)){
   trajs1 <- t(apply(trajs, 1, function(x) log(x[2:length(x)]/x[1:(length(x)-1)])))
   trajs1[trajs1 < -0.5] <- -0.5
   trajs1[trajs1 > 0.5] <- 0.5
-  trajs1_quants <- t(apply(trajs1, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975))))
+  trajs1_quants <- t(apply(trajs1, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975),na.rm=TRUE)))
   trajs1_quants <- as.data.frame(trajs1_quants)
   trajs1_quants$t <- 1:nrow(trajs1_quants)
   colnames(trajs1_quants) <- c("lower95","lower50","median","upper50","upper95","t")
   
   tmp_beta <- trajs1[,ncol(trajs1)]
   beta_quants <- cbind(seq(0.05,0.95,by=0.01), t(sapply(seq(0.05,0.95,by=0.01), 
-                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2)))))
+                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2),na.rm=TRUE))))
   
   dats_all_alt <- NULL
   p_daily <- ggplot() +
@@ -798,7 +810,7 @@ for(i in seq_along(obs_times)){
     p_daily <- p_daily + geom_polygon(data=tmp,aes(x=x,y=y),alpha=0.05,fill=AAAS_palette["grey1"])
   }
   
-  med_segment <- quantile(tmp_beta, 0.5)
+  med_segment <- quantile(tmp_beta, 0.5,na.rm=TRUE)
   ps_daily_prior[[i]] <-  p_daily + scale_y_continuous(limits=c(-0.5,0.5)) +
     geom_segment(data=data.frame(y=0,yend=beta_max*sin(pi*med_segment),x=0,xend=beta_max*cos(pi*med_segment)),
                  aes(x=x,y=y,xend=xend,yend=yend),
@@ -818,10 +830,10 @@ for(i in seq_along(obs_times)){
   trajs <- matrix(0, nrow=n_samp,ncol=length(times_seir))
   t0s <- NULL
   for(k in seq_along(samps)){
-    trajs[k,] <- pmax(solveSEIRModel_rlsoda_wrapper(get_index_pars(chain_comb_prior, samps[k]),times_seir),0.0000001)
-    t0s[k] <- get_index_pars(chain_comb_prior, samps[k])["t0"]
+    trajs[k,] <- pmax(solveSEIRModel_rlsoda_wrapper(get_index_pars(chain_comb_prior_broad, samps[k]),times_seir),0)
+    t0s[k] <- get_index_pars(chain_comb_prior_broad, samps[k])["t0"]
   }
-  
+  #trajs <- t(apply(trajs,1,function(x) x/sum(x)))
   trajs_dat <- data.frame(trajs)
   colnames(trajs_dat) <- times_seir
   trajs_dat$samp <- 1:nrow(trajs_dat)
@@ -837,14 +849,14 @@ for(i in seq_along(obs_times)){
   trajs1 <- t(apply(trajs, 1, function(x) log(x[2:length(x)]/x[1:(length(x)-1)])))
   trajs1[trajs1 < -0.5] <- -0.5
   trajs1[trajs1 > 0.5] <- 0.5
-  trajs1_quants <- t(apply(trajs1, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975))))
+  trajs1_quants <- t(apply(trajs1, 2, function(x) quantile(x,c(0.025,0.25,0.5,0.75,0.975),na.rm=TRUE)))
   trajs1_quants <- as.data.frame(trajs1_quants)
   trajs1_quants$t <- 1:nrow(trajs1_quants)
   colnames(trajs1_quants) <- c("lower95","lower50","median","upper50","upper95","t")
   
   tmp_beta <- trajs1[,ncol(trajs1)]
   beta_quants <- cbind(seq(0.05,0.95,by=0.01), t(sapply(seq(0.05,0.95,by=0.01), 
-                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2)))))
+                                                        function(y) quantile(tmp_beta, c(0.5-y/2,0.5+y/2),na.rm=TRUE))))
   
   dats_all_alt <- NULL
   p_daily <- ggplot() +
@@ -864,7 +876,7 @@ for(i in seq_along(obs_times)){
     p_daily <- p_daily + geom_polygon(data=tmp,aes(x=x,y=y),alpha=0.05,fill=AAAS_palette["grey1"])
   }
   
-  med_segment <- quantile(tmp_beta, 0.5)
+  med_segment <- quantile(tmp_beta, 0.5,na.rm=TRUE)
   ps_daily_prior_broad[[i]] <-  p_daily + scale_y_continuous(limits=c(-0.5,0.5)) +
     geom_segment(data=data.frame(y=0,yend=beta_max*sin(pi*med_segment),x=0,xend=beta_max*cos(pi*med_segment)),
                  aes(x=x,y=y,xend=xend,yend=yend),
@@ -881,7 +893,7 @@ for(i in seq_along(obs_times)){
 trajs_dat_all_comb_alt <- do.call("bind_rows", trajs_dat_all_alt)
 
 p2 <- ggplot(trajs_dat_all_comb_alt %>% filter(samp <= 1000, obs_time == 56)) + 
-  geom_line(aes(x=t,y=inc,col=t0 <= 29,group=samp))
+  geom_line(aes(x=t,y=inc,col=t0 <= (29+seir_timeshift),group=samp))
 
 supp_ps_all_daily_prior <- ps_daily_prior[[1]] + 
   theme(plot.tag = element_text(family="sans",size=10,face="bold")) +
@@ -955,33 +967,34 @@ supp_p_use_dial_left <- ps_daily_alt[[4]] +
   labs(tag="B")
 
 
-plot_dat_supp <- trajs_dat_all_comb_alt %>% filter(obs_time==56) %>%
-  mutate("Constrained to\n early seed"=ifelse(t0 < 29, "Early","Late")) %>%
-  mutate(t = as.Date(t, origin="2020-02-01"))
+plot_dat_supp  <- trajs_dat_all_comb_alt %>% filter(obs_time==56) %>%
+  mutate(t = as.Date(t, origin="2020-02-01")) %>%
+  mutate("Epidemic seed date"=ifelse(t0 < 60, "2020-02-01 to 2020-04-01","2020-04-01 to 2020-04-25"))
 
-plot_dat_supp_t0 <- plot_dat_supp %>% group_by(`Constrained to\n early seed`) %>%
-  summarize(t0_mean=mean(t0),t0_lower=quantile(t0, 0.025),t0_upper=quantile(t0, 0.975)) %>%
+plot_dat_supp_t0 <- plot_dat_supp %>% group_by(`Epidemic seed date`) %>%
+  summarize(t0_mean=mean(t0),t0_lower=quantile(t0, 0.025,na.rm=TRUE),t0_upper=quantile(t0, 0.975,na.rm=TRUE)) %>%
   mutate(t0_mean = as.Date(t0_mean, origin="2020-02-01"),
          t0_lower = as.Date(t0_lower, origin="2020-02-01"),
          t0_upper = as.Date(t0_upper, origin="2020-02-01"))
   
   
 supp_p_traj <- plot_dat_supp %>%
+  #filter(t >= as.Date("2020-05-03")-35) %>%
   ggplot() + 
   scale_color_manual(values=c("#3B4992FF","#EE0000FF")) +
-  geom_line(aes(x=t,y=inc,color=`Constrained to\n early seed`,group=samp),size=0.1) +
-  geom_pointrange(data=plot_dat_supp_t0,y=0.15,aes(xmin=t0_lower,xmax=t0_upper,x=t0_mean,col=`Constrained to\n early seed`)) +
+  geom_line(aes(x=t,y=inc,color=`Epidemic seed date`,group=samp),size=0.1) +
+  geom_pointrange(data=plot_dat_supp_t0,y=0.15,aes(xmin=t0_lower,xmax=t0_upper,x=t0_mean,col=`Epidemic seed date`)) +
   export_theme +
-  theme(legend.position=c(0.3,0.8),
+  theme(legend.position=c(0.3,0.9),
         panel.grid.major=element_line(color="grey40",size=0.1),
         plot.tag=element_text(size=10,face="bold")) +
   scale_y_continuous(expand=c(0,0)) +
-  ylab("Relative probability of infection") +
+  ylab("Incidence") +
   xlab("Date") +
   labs(tag="C")
 
 
-chainwd_tmp <- paste0(chainwd,"/",runname_seir_alt,"/",56)
+chainwd_tmp <- paste0(chainwd,"/",runname_seir_alt,"/",56+seir_timeshift)
 chain_seir_alt <- load_mcmc_chains(chainwd_tmp, parTab_seir,TRUE,1, mcmcPars_ct_seir["adaptive_period"],
                                    multi=TRUE,chainNo=FALSE,PTchain = TRUE)$list
 coda::gelman.diag(chain_seir_alt)
@@ -1006,8 +1019,8 @@ supp_traces <- chain1[,c("sampno",unique(parTab_seir[which(parTab_seir$fixed == 
 figS12 <- (supp_ps_all_daily_alt_horiz) / ((supp_p_use_dial_left) | (supp_p_use_dial_right)) / (supp_p_traj) / (supp_traces) + plot_layout(heights=c(0.5,3,4,3))
 
 if(save_plots){
-  ggsave("figures/supplement/figS12.png",figS12,width=7,height=8,dpi=300,units="in")
-  ggsave("figures/supplement/figS12.pdf",figS12,width=7,height=8,units="in")
+  ggsave("figures/supplement/figS12_raw.png",figS12,width=7,height=8,dpi=300,units="in")
+  ggsave("figures/supplement/figS12_raw.pdf",figS12,width=7,height=8,units="in")
 }
 
 ########################################
@@ -1067,19 +1080,25 @@ if(save_plots){
 grs_daily_comb <- do.call("bind_rows",grs_daily)
 grs_daily_comb$date <- as.Date(grs_daily_comb$t,origin="2020-03-08")
 
+
 p_grs_compare <- ggplot() + 
+  #geom_ribbon(data=gr_dat_top,aes(x=date,ymin=gr_lower,ymax=gr_upper),alpha=0.25,fill="darkorange") +
+  #geom_ribbon(data=gr_dat_bot,aes(x=date,ymin=gr_lower,ymax=gr_upper),alpha=0.25,fill=AAAS_palette["green1"]) +
+  #geom_line(data=gr_dat_median,aes(x=date,y=gr_mean,col=is_grow,group=index)) +
   geom_ribbon(data=trajs_dat_top,aes(x=date,ymin=lower,ymax=upper),alpha=0.25,fill=AAAS_palette["purple1"]) +
   geom_ribbon(data=trajs_dat_bot,aes(x=date,ymin=lower,ymax=upper),alpha=0.25,fill=AAAS_palette["purple1"]) +
-  geom_line(data=trajs_dat_median,aes(x=date,y=median,col=is_grow,group=index)) +
-  geom_errorbar(data=grs_daily_comb,aes(x=date,ymin=lower95,ymax=upper95,col="Cross-sectional estimate"),width=3,alpha=0.25) +
-  geom_errorbar(data=grs_daily_comb,aes(x=date,ymin=lower50,ymax=upper50,col="Cross-sectional estimate"),width=1.5) +
-  geom_point(data=grs_daily_comb,aes(x=date,y=median,col="Cross-sectional estimate"),size=1) +
+  geom_line(data=trajs_dat_median %>% mutate(is_grow="Gaussian process estimate"),aes(x=date,y=median,col=is_grow,group=index)) +
+  geom_errorbar(data=grs_daily_comb,aes(x=date,ymin=lower95,ymax=upper95,col="Cross-sectional Ct estimate"),width=3,alpha=0.25) +
+  geom_errorbar(data=grs_daily_comb,aes(x=date,ymin=lower50,ymax=upper50,col="Cross-sectional Ct estimate"),width=1.5) +
+  geom_point(data=grs_daily_comb,aes(x=date,y=median,col="Cross-sectional Ct estimate"),size=1) +
   coord_cartesian(ylim=c(-0.5,0.5)) +
-  scale_x_date(expand=c(0,0),limits=as.Date(c("2020-03-01", "2020-12-01"), "%Y-%m-%d"), 
+  scale_x_date(expand=c(0,0),limits=as.Date(c("2020-03-09", "2020-12-01"), "%Y-%m-%d"), 
                breaks="1 month") +
   geom_hline(yintercept=0,linetype="dashed",col=AAAS_palette["grey1"]) +
-  scale_color_manual(values=c("Cross-sectional estimate"=as.character(AAAS_palette["green1"]),
-                              "Ct estimate"=as.character(AAAS_palette["purple1"])))+
+  scale_color_manual(values=c(#"R(t), growing"="darkorange",
+                         #"R(t), declining"=as.character(AAAS_palette["green1"]),
+                         "Gaussian process estimate"=as.character(AAAS_palette["purple1"]),
+                         "Cross-sectional Ct estimate"=as.character(AAAS_palette["green1"])))+
   export_theme +
   theme(legend.position=c(0.2,0.9),
         legend.title = element_blank(),
@@ -1088,6 +1107,7 @@ p_grs_compare <- ggplot() +
         plot.margin=unit(c(0.5,1,0.5,0.5),units="cm")) +
   xlab("Date") +
   ylab("Growth rate") 
-ggsave(plot=p_grs_compare,filename="figures/supplement/bwh_growths_compare.png",height=4,width=7,units="in",dpi=300)
-ggsave(plot=p_grs_compare,filename="figures/supplement/bwh_growths_compare.pdf",height=4,width=7,units="in",dpi=300)
-
+if(save_plots){
+  ggsave(plot=p_grs_compare,filename="figures/supplement/bwh_growths_compare.png",height=4,width=7,units="in",dpi=300)
+  ggsave(plot=p_grs_compare,filename="figures/supplement/bwh_growths_compare.pdf",height=4,width=7,units="in",dpi=300)
+}

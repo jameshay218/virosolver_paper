@@ -354,13 +354,13 @@ plot_predictions_fig2_indiv <- function(use_loc, preds_all, best_prob_dat, obs_d
   samps <- sample(unique(preds_all$sampno),n_samp)
   p_predictions <- ggplot(preds_all %>% filter(loc == use_loc,sampno %in% samps)) + 
     geom_line(aes(x=t,y=prob_infection,group=sampno,col="Posterior draw"),size=0.1) +
-    geom_line(data=best_prob_dat%>% filter(loc == use_loc),aes(x=t,y=prob_infection,col="MAP"),size=1) +
+    geom_line(data=best_prob_dat%>% filter(loc == use_loc),aes(x=t,y=prob_infection,col="MAP"),size=0.5) +
     geom_vline(aes(xintercept=samp_t),linetype="dashed") +
     scale_y_continuous(breaks=seq(0,ymax,by=0.03),expand=c(0,0),limits=c(0,ymax)) +
     xlab("Date") +
     ylab("Per capita incidence") +
     export_theme + 
-    scale_color_manual(values=c("Posterior draw"="#EE0000FF","MAP"="#5F559BFF")) +
+    scale_color_manual(values=c("Posterior draw"="#EE0000FF","MAP"="black")) +
     scale_linetype_manual(values=c("Sample date"="dashed")) +
     guides(col=guide_legend(title=NULL),linetype=guide_legend(title=NULL)) +
     theme(legend.position=c(0.1,0.8),

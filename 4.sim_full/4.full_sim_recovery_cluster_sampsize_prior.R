@@ -20,7 +20,7 @@ library(fitdistrplus)
 library(deSolve)
 library(lazymcmc) ## devtools::install_github("jameshay218/lazymcmc")
 library(doParallel)
-HOME_WD <- "~/Documents/GitHub/"
+#HOME_WD <- "~/Documents/GitHub/"
 HOME_WD <- "~"
 devtools::load_all(paste0(HOME_WD,"/virosolver"))
 
@@ -39,6 +39,7 @@ control_table <- read_csv(paste0(HOME_WD,"/virosolver_paper/pars/massachusetts/s
 
 ## Get task ID, used to read options from control table
 simno <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
+#simno <- 600
 ## Set random seed
 set.seed(simno)
 

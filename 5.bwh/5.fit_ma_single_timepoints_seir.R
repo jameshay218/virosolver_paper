@@ -27,7 +27,7 @@ devtools::load_all(paste0(HOME_WD,"lazymcmc"))
 ## Arguments for this run
 set.seed(1)
 n_samp <- 1000
-runname <- "ma_seir_constrained2"
+runname <- "ma_seir_exposed_seed"
 run_version <- "seir" ##gp, seir or exp##
 
 ## IMPORTANT - change this flag to TRUE if running the MCMC for the first time
@@ -43,14 +43,14 @@ plot_wd <- paste0(HOME_WD, "/virosolver_paper/plots/5.real_ma_single_timepoint/"
 setwd(main_wd)
 
 ## Manage MCMC runs and parallel runs
-nchains <- 1
+nchains <- 3
 n_clusters <- 11
 cl <- parallel::makeCluster(n_clusters, setup_strategy = "sequential")
 registerDoParallel(cl)
 
 ## MCMC parameters for Ct model fits
 ## MCMC control parameters
-n_temperatures <- 3
+n_temperatures <- 5
 mcmcPars_ct <- list("iterations"=50000,"popt"=0.44,"opt_freq"=1000,
                  "thin"=10,"adaptive_period"=30000,"save_block"=1000,"temperature" = seq(1,101,length.out=n_temperatures),
                  "parallel_tempering_iter" = 5,"max_adaptive_period" = 30000, 
@@ -97,11 +97,10 @@ times_extended <-c(times,max(times):(max(times)+50))
 ########################################
 ## 3. Read in MA data
 ########################################
-#obs_dat_all <- read_csv("~/Documents/GitHub/ct_inference_preprint/data/BWH_COVID_Cts_deid_20200403-20200831.csv") %>%
-#  mutate(id=1:n())
 obs_dat_all <- read_csv("data/panther_Ct_20200403-20201110.csv") %>% rename(panther_Ct=ORF1ab_Ct) %>%
   mutate(platform="Panther",first_pos=1) %>%
-  mutate(id=1:n())
+  mutate(id=1:n()) %>%
+  filter(panther_Ct < 40)
 
 obs_dat1 <- obs_dat_all
 
@@ -167,9 +166,6 @@ if(run_version == "gp"){
   names(means) <- parTab$names
 }
 
-## Epidemic cannot start after first observation time
-#parTab[!(parTab$names %in% c("prob","rho","nu","obs_sd")),"fixed"] <- 1
-
 f <- create_posterior_func(parTab, obs_dat1, prior_func_use, 
                            inc_func_use,solve_ver="likelihood",
                            use_pos=TRUE,
@@ -178,9 +174,11 @@ f(pars)
 ## Run for each chain
 if(rerun_mcmc){
   res <- foreach(i=seq_along(obs_times),.packages = c("extraDistr","tidyverse","patchwork")) %dopar% {
+
     ## Need to read in R package
     devtools::load_all(paste0(HOME_WD,"/virosolver"))
     devtools::load_all(paste0(HOME_WD,"/lazymcmc"))
+    #for(i in seq_along(obs_times)){
     timepoint <- obs_times[i]
     runname_use <- paste0(runname,"_time_",timepoint)
     dir.create(paste0(chainwd,"/",timepoint),recursive = TRUE)
@@ -196,11 +194,12 @@ if(rerun_mcmc){
     times <- 0:max(obs_dat_use$t)
     
     samp_time <- as.Date(min(c(obs_dat_use$t)),origin="2020-02-01")
+    parTab[parTab$names == "t0",c("upper_bound","upper_start")] <- min(obs_dat_use$t) - 7
     
     if(TRUE){
       if(samp_time < as.Date("2020-06-01")){
         start_min <- as.Date("2020-02-01")
-        start_max <- as.Date("2020-03-01")
+        start_max <- as.Date("2020-04-01")
       } else if (samp_time >= as.Date("2020-06-01") & samp_time < as.Date("2020-08-01")){
         start_min <- as.Date("2020-02-01")
         start_max <- samp_time - 14
@@ -211,8 +210,10 @@ if(rerun_mcmc){
       parTab[parTab$names == "t0",c("lower_bound","lower_start")] <- as.numeric(start_min - as.Date("2020-02-01"))
       parTab[parTab$names == "t0",c("upper_bound","upper_start")] <- as.numeric(start_max - as.Date("2020-02-01"))
     }
-    #parTab[parTab$names == "t0",c("upper_bound","upper_start")] <- min(obs_dat_use$t) - 7
-    
+    print(i)
+    print(paste0("Date: ", samp_time, "; Seed between ", start_min," and ", start_max))
+    #print(parTab[parTab$names == "t0",])
+    #}
     
     chains <- NULL
     for(j in 1:nchains){

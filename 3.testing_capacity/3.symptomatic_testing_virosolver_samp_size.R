@@ -27,7 +27,7 @@ library(doParallel)
 # library(lazymcmc) devtools::install_github("jameshay218/lazymcmc) ## Note that in this script, the parallel tempering version is used. See README
 
 HOME_WD <- "~"
-#HOME_WD <- "~/Documents/GitHub/"
+HOME_WD <- "~/Documents/GitHub/"
 devtools::load_all(paste0(HOME_WD,"/virosolver"))
 devtools::load_all(paste0(HOME_WD,"/lazymcmc"))
 
@@ -169,8 +169,8 @@ rerun_again <- c(1L, 3L, 5L, 7L, 9L, 12L, 13L, 14L, 16L, 17L, 18L, 19L, 20L,
                  537L, 538L, 542L, 549L, 550L, 551L, 552L, 554L, 555L, 556L, 560L, 
                  561L, 562L, 564L, 565L, 569L, 571L, 573L, 574L, 576L, 579L, 580L, 
                  581L, 582L, 585L, 586L, 587L, 592L, 596L)
-reruns <- reruns[rerun_again]
-control_table <- control_table[reruns,]
+#reruns <- reruns[rerun_again]
+#control_table <- control_table[reruns,]
 
 n_temperatures <- 5
 mcmcPars_ct <- list("iterations"=30000,"popt"=0.44,"opt_freq"=1000,
@@ -186,6 +186,7 @@ n_samp <- 200 ## Number of posterior samples for plots
 
 ## Set Simulation Number and get sim settings
 Sim <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
+Sim <- 1
 print(paste0("Starting Simulation Number: ",Sim))
 
 ## Name of this run
@@ -341,7 +342,7 @@ max_age <- NA
 ## 4. Fit model to Ct values
 ########################################
 ## For each observation time, fit nchain chains
-rerun_mcmc <- TRUE
+rerun_mcmc <- FALSE
 if(rerun_mcmc){
   for(i in 1:length(obs_times)) {
     obs_time <- obs_times[i]

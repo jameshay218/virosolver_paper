@@ -87,9 +87,9 @@ p_seeirr <- ggplot() +
   #          aes(xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax),fill="grey70",alpha=0.2) +
   #geom_rect(data=tibble(xmin=as.Date(max(gr_quants$time)),xmax=as.Date("2020-05-16"),ymin=0,ymax=1),
   #          aes(xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax),fill="grey70",alpha=0.2) +
-  geom_line(data=random_traj %>% filter(location == use_loc),aes(x=time,y=prev/(0.7/0.12),group=samp),size=0.05,col=AAAS_palette["teal1"]) +
+  geom_line(data=random_traj %>% filter(location == use_loc),aes(x=time,y=prev/(0.7/0.12),group=samp),size=0.05,col="orange") +
   geom_ribbon(data=quants%>% filter(location == use_loc),
-              aes(ymin=lower/(0.7/0.12),ymax=upper/(0.7/0.12),x=time),alpha=0.1,fill=AAAS_palette["teal1"]) +
+              aes(ymin=lower/(0.7/0.12),ymax=upper/(0.7/0.12),x=time),alpha=0.1,fill="orange") +
   geom_point(data=nh_prev1 %>%
                mutate(date=as.Date(date + min_date))%>% filter(location == use_loc), aes(x=date, y=prev/(0.7/0.12)),shape=8,
              col="black") +
@@ -97,7 +97,7 @@ p_seeirr <- ggplot() +
                   mutate(date=as.Date(date + min_date))%>% filter(location == use_loc),
                 aes(x=date,ymin=lower_confint/(0.7/0.12), ymax=upper_confint/(0.7/0.12)),
                 width=2, col="black") +
-  geom_line(data=best_traj%>% filter(location == use_loc), aes(x=time,y=prev/(0.7/0.12)),col=AAAS_palette["teal1"]) +
+  geom_line(data=best_traj%>% filter(location == use_loc), aes(x=time,y=prev/(0.7/0.12)),col="orange") +
   #geom_pointrange(data=t0_pointrange%>% filter(location == use_loc),aes(xmin=lower,xmax=upper,x=median),y=0.1, 
   #                col=AAAS_palette["blue1"],size=0.25,shape=18) +
   geom_ribbon(data=quants_inc%>% filter(location == use_loc),

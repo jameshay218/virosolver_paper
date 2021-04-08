@@ -333,7 +333,6 @@ simulate_reporting <- function(individuals,
   } else {
     ## Sample entire population
     if(!symptomatic){
-      #browser()
       indivs <- unique(sampled_individuals$i)
       indivs_test <- indivs
       tmp_sampled_indivs <- NULL
@@ -345,7 +344,7 @@ simulate_reporting <- function(individuals,
           filter(i %in% sampled_indivs) %>% 
           mutate(sampled_time=sampled_time1,
                  confirmed_time = sampled_time + confirmation_delay)
-        indivs_test <- setdiff(indivs, sampled_indivs)
+        indivs_test <- setdiff(indivs_test, sampled_indivs)
       }
       sampled_individuals <- do.call("bind_rows", tmp_sampled_indivs)
       
@@ -471,7 +470,6 @@ simulate_viral_loads_wrapper <- function(linelist,
   sd_mod[unmod_vec] <- 1
   decrease_vec <- (t_switch+1):(t_switch+kinetics_pars["sd_mod_wane"])
   sd_mod[decrease_vec] <- 1 - ((1-kinetics_pars["sd_mod"])/kinetics_pars["sd_mod_wane"])*seq_len(kinetics_pars["sd_mod_wane"])
-  
   vl_dat <- linelist %>% 
     ## Fix infection time for uninfected individuals
     mutate(infection_time = ifelse(is.na(infection_time),-100, infection_time)) %>%
@@ -479,8 +477,8 @@ simulate_viral_loads_wrapper <- function(linelist,
     ## Pre-compute loss of detectability
     mutate(last_detectable_day = infection_time + ## From infection time
              rnbinom(n(), 1, prob=kinetics_pars["prob_detect"]) + ## How long until full clearance?
-             kinetics_pars["tshift"] + kinetics_pars["desired_mode"] + kinetics_pars["t_switch"], ## With correct shift
-           ct=virosolver::viral_load_func(kinetics_pars, sampled_time, FALSE, infection_time)) %>%
+             kinetics_pars["tshift"] + kinetics_pars["desired_mode"] + kinetics_pars["t_switch"]) %>% ## With correct shift
+    mutate(ct=virosolver::viral_load_func(kinetics_pars, sampled_time, FALSE, infection_time)) %>%
     ## If sampled after loss of detectability or not infected, then undetectable
     mutate(ct = ifelse(sampled_time > last_detectable_day, 1000, ct),
            ct = ifelse(is_infected == 0, 1000, ct),

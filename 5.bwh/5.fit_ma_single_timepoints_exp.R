@@ -101,7 +101,8 @@ times_extended <-c(times,max(times):(max(times)+50))
 #  mutate(id=1:n())
 obs_dat_all <- read_csv("data/panther_Ct_20200403-20201110.csv") %>% rename(panther_Ct=ORF1ab_Ct) %>%
   mutate(platform="Panther",first_pos=1) %>%
-  mutate(id=1:n())
+  mutate(id=1:n())%>%
+  filter(panther_Ct < 40)
 
 obs_dat1 <- obs_dat_all
 

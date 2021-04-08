@@ -131,7 +131,9 @@ simulated_viral_loads <- simulated_viral_loads %>% mutate(period = "Second decli
                                  period= ifelse(sampled_time < 250 & sampled_time > 150,"Second growth",period),
                                  period= ifelse(sampled_time < 150 & sampled_time > 75,"First decline",period),
                                  period= ifelse(sampled_time < 75,"First growth",period))
- 
+
+simulated_viral_loads <- simulated_viral_loads %>%
+  mutate(days_since_onset = sampled_time - onset_time)
 
 obs_dat <- simulated_viral_loads %>% dplyr::select(sampled_time, ct_obs) %>%
   rename(t = sampled_time, ct=ct_obs) %>% arrange(t)
@@ -170,7 +172,7 @@ p2 <- simulated_viral_loads %>%
   scale_y_continuous(expand=c(0,0)) +
   scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
   geom_vline(data=R0_times,aes(xintercept=x),col="#008280FF",size=1) +
-  ylab("Smoothed days since infection") +
+  ylab("Smoothed days from\ninfection to testing") +
   main_theme + 
     theme(legend.title=element_blank(), 
           legend.position=c(0.8,0.8),
@@ -181,7 +183,23 @@ p2 <- simulated_viral_loads %>%
           panel.grid.minor.x=element_blank(),
           panel.grid.major=element_line(size=0.1,colour="grey40")) +
   labs(tag="B")
-
+p2_alt <- simulated_viral_loads %>% 
+  ggplot() + 
+  geom_smooth(aes(x=sampled_time,y=days_since_onset),fill="#008B45FF",col="#008B45FF") +
+  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
+  geom_vline(data=R0_times,aes(xintercept=x),col="#008280FF",size=1) +
+  ylab("Smoothed days from\ninfection to testing") +
+  main_theme + 
+  theme(legend.title=element_blank(), 
+        legend.position=c(0.8,0.8),
+        axis.line.x=element_blank(),
+        axis.title.x=element_blank(), 
+        axis.text.x=element_blank(),
+        axis.ticks=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major=element_line(size=0.1,colour="grey40")) +
+  labs(tag="B")
 
 p3 <- obs_dat %>% 
   filter(ct < 40) %>% 

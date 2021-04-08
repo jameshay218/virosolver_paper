@@ -1,4 +1,4 @@
-VLcurve <- data.frame(TSI=seq(pars["desired_mode"],35,by=0.1))
+VLcurve <- data.frame(TSI=seq(0,35,by=0.1))
 
 VLcurve$Mean <- viral_load_func(pars, VLcurve$TSI, convert_vl=FALSE)
 VLcurve$IL <- qnorm(p=0.025, mean=VLcurve$Mean, sd=pars["obs_sd"])

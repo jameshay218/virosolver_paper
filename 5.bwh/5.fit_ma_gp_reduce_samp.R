@@ -27,11 +27,11 @@ devtools::load_all(paste0(HOME_WD,"/virosolver"))
 index <- 1994
 set.seed(index)
 n_samp <- 1000
-runname <- "ma_gp_subsample50"
-subsamp_n <- 50
-#runname <- "ma_gp_free"
+runname <- "ma_gp_subsample5perc"
+subsamp_n <- 25
+subsamp_frac <- 0.05
 run_version <- "gp" ##gp, seir or exp##
-rerun_mcmc <- FALSE
+rerun_mcmc <- TRUE
 
 ## CHANGE TO MAIN WD
 ## Important to set this to the full file path, as on L205 the foreach loop
@@ -159,7 +159,7 @@ if(run_version == "gp"){
 parTab[parTab$names == "t0",c("upper_bound","upper_start")] <- min(obs_dat1$t)
 #parTab[!(parTab$names %in% c("prob","rho","nu","obs_sd")),"fixed"] <- 1
 
-## Subsample data to use at most 50 samples per timepoint
+## Subsample data to use at most subsamp_n samples per timepoint
 obs_dat_old <- obs_dat1
 obs_dat1 <- obs_dat1 %>% 
   group_by(t) %>% 
@@ -167,7 +167,9 @@ obs_dat1 <- obs_dat1 %>%
   mutate(n_use = pmin(n, subsamp_n)) %>% 
   left_join(obs_dat1) %>%
   group_by(t) %>%
-  sample_n(n_use) %>%
+  ungroup() %>%
+  sample_frac(subsamp_frac) %>%
+  #sample_n(n_use) %>%
   dplyr::select(t, ct)
 
 

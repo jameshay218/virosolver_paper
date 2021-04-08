@@ -36,14 +36,14 @@ mcmcPars_ct <- c("iterations"=700000,"popt"=0.44,"opt_freq"=5000,
                  "thin"=200,"adaptive_period"=300000,"save_block"=10000)
 
 ## Arguments for this run, controlled by a csv file
-#control_table <- read_csv(paste0(HOME_WD,"/virosolver_paper/pars/sim_ma_control_use.csv"))
-control_table <- readxl::read_excel(paste0(HOME_WD,"/virosolver_paper/pars/massachusetts/sim_ma_control.xlsx"))
-control_table$chainwd <- "~/Documents/GitHub/virosolver_paper/mcmc_chains/3.sim_ma_ct/sim_MA_gp/2/"
+control_table <- read_csv(paste0(HOME_WD,"/virosolver_paper/pars/massachusetts/sim_ma_control_local_late.csv"))
+#control_table <- readxl::read_excel(paste0(HOME_WD,"/virosolver_paper/pars/massachusetts/sim_ma_control.xlsx"))
+control_table$chainwd <- "~/Documents/GitHub/virosolver_paper/mcmc_chains/3.sim_ma_ct/sim_MA_gp_late/2/"
 ps <- NULL
 trajs_quants_all <- NULL
 obs_dat_use_all <- NULL
 ## Get task ID, used to read options from control table
-for(index in 4:14){
+for(index in 1:7){
   simno <- index#as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   ## Set random seed
   set.seed(simno)
