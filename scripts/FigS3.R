@@ -19,6 +19,11 @@ library(lazymcmc)
 library(extraDistr)
 devtools::load_all("~/Documents/GitHub/virosolver")
 
+AAAS_palette <- c("blue1"="#3B4992FF","red1"="#EE0000FF","green1"="#008B45FF",
+                  "purple1"="#631879FF","teal1"="#008280FF","red2"="#BB0021FF",
+                  "purple2"="#5F559BFF","purple3"="#A20056FF",
+                  "grey1"="#808180FF","black"="#1B1919FF")
+
 ## Where to perform the simulations
 HOME_WD <- "~"
 HOME_WD <- "~/Documents/GitHub/"
@@ -38,12 +43,12 @@ main_theme <- theme_classic() +
         plot.tag = element_text(size=10,face="bold"),
         panel.grid.minor.x=element_blank())
 
-main_theme2 <- theme(axis.text.x=element_text(size=8),
-                     axis.text.y=element_text(size=8),
-                     axis.title.x=element_text(size=10),
-                     axis.title.y=element_text(size=10),
-                     legend.text=element_text(size=8),
-                     plot.tag=element_text(size=14))
+main_theme2 <- theme(axis.text.x=element_text(size=7),
+                     axis.text.y=element_text(size=7),
+                     axis.title.x=element_text(size=8),
+                     axis.title.y=element_text(size=8),
+                     legend.text=element_text(size=7),
+                     plot.tag=element_text(size=10,face="bold"))
 
 ########################################
 ## 2. Model parameters and simulation settings
@@ -147,142 +152,127 @@ obs_dat <- simulated_viral_loads %>% dplyr::select(sampled_time, ct_obs) %>%
 
 R0_times <- tibble(x=c(0,seir_pars1[c("t_switch1","t_switch2")]),label=c("R[0] == 2","R[0] == 0.9","R[0] == 1.5"))
 
-p1 <- ggplot(data=seir_dynamics$seir_outputs) + 
-  geom_bar(aes(x=step, y=inc, fill="Incidence"),stat="identity",col="#808180FF",size=0.25) +
-  geom_line(aes(x=step,y=Rt*2000,color="R[t]"), size=1) + 
-  theme_light() +
-  scale_color_manual(values=c("R[t]" = "#3B4992FF"),labels=c(parse(text="R[t]"))) +
-  scale_fill_manual(values=c("Incidence"="#808180FF")) +
-  geom_hline(yintercept=1*2000,linetype="dashed",col="black",size=1) +
-  geom_segment(data=R0_times,aes(x=x,xend=x,y=0,yend=4000),col="#008280FF",size=1) +
-  geom_text(data=R0_times,aes(x=x,y=4250,label=label),size=3,parse=TRUE) +
-  scale_y_continuous(expand=c(0,0),
-                     limits=c(0,4350),
-                     name="Incidence",
-                     sec.axis=sec_axis(trans=~.*1/2000, name=expression(R[t]))) + 
-  scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
-  main_theme +
-  theme(legend.title=element_blank(), 
-        legend.position=c(0.8,0.8),
-        axis.line.x=element_blank(),
-        axis.title.x=element_blank(), 
-        axis.text.x=element_blank(),
-        axis.ticks=element_blank(),
-        panel.grid.minor.x=element_blank(),
-        panel.grid.major=element_line(size=0.1,colour="grey40")) + 
-  labs(tag="A")
-
-
-p2 <- simulated_viral_loads %>% 
-  ggplot() + 
-  geom_smooth(aes(x=sampled_time,y=days_since_infection),fill="#008B45FF",col="#008B45FF") +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
-  geom_vline(data=R0_times,aes(xintercept=x),col="#008280FF",size=1) +
-  ylab("Smoothed days from\ninfection to testing") +
-  main_theme + 
-    theme(legend.title=element_blank(), 
-          legend.position=c(0.8,0.8),
-          axis.line.x=element_blank(),
-          axis.title.x=element_blank(), 
-          axis.text.x=element_blank(),
-          axis.ticks=element_blank(),
-          panel.grid.minor.x=element_blank(),
-          panel.grid.major=element_line(size=0.1,colour="grey40")) +
-  labs(tag="B")
-
-p2_alt <- simulated_viral_loads %>% 
-  ggplot() + 
-  geom_smooth(aes(x=sampled_time,y=days_since_onset),fill="#008B45FF",col="#008B45FF") +
-  scale_y_continuous(expand=c(0,0)) +
-  scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
-  geom_vline(data=R0_times,aes(xintercept=x),col="#008280FF",size=1) +
-  ylab("Smoothed days from\ninfection to testing") +
-  main_theme + 
-  theme(legend.title=element_blank(), 
-        legend.position=c(0.8,0.8),
-        axis.line.x=element_blank(),
-        axis.title.x=element_blank(), 
-        axis.text.x=element_blank(),
-        axis.ticks=element_blank(),
-        panel.grid.minor.x=element_blank(),
-        panel.grid.major=element_line(size=0.1,colour="grey40")) +
-  labs(tag="B")
-
-p3 <- obs_dat %>% 
-  filter(ct < 40) %>% 
-  ggplot() +
-  geom_smooth(aes(x=t,y=ct),col="#631879FF",fill="#631879FF") +
-  scale_y_continuous(trans="reverse",expand=c(0,0)) +
-  scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
-  geom_vline(data=R0_times,aes(xintercept=x),col="#008280FF",size=1) +
-  ylab("Smoothed Ct values") +
-  xlab("Days since start of outbreak") +
-  main_theme + 
-  main_theme + 
-  theme(legend.title=element_blank(), 
-        panel.grid.minor.x=element_blank(),
-        panel.grid.major=element_line(size=0.1,colour="grey40")) +
-  labs(tag="C")
-
-p_main <- p1 / p2 / p3
-ggsave("figures/supplement/supp_symptom_surveillance.pdf",p_main,height=8,width=8,units="in",device=cairo_pdf)
-ggsave("figures/supplement/supp_symptom_surveillance.png",p_main,height=8,width=8,units="in",dpi=300)
-
 
 
 ## Look at all the various distributions over time
 p_incu_overall <- simulated_viral_loads %>% ggplot() + 
-  geom_histogram(aes(x=incu_period,y=..density..),fill="grey70",col="black") +
+  geom_histogram(aes(x=incu_period,y=..density..),fill="#008280FF",col="black") +
   scale_y_continuous(expand=expansion(mult=c(0,0.1))) +
   scale_x_continuous(expand=c(0,0)) +
   xlab("Overall incubation period (days)") +
   ylab("Probability density") +
   main_theme +
   main_theme2 +
-  labs(tag="B")
+  theme(plot.background = element_blank(),
+        panel.grid.major=element_line(size=0.01,color="grey70")) +
+  labs(tag="A")
 p_conf_overall <- simulated_viral_loads %>% ggplot() + 
-  geom_histogram(aes(x=confirmation_delay,y=..density..),fill="grey70",col="black",binwidth=1) +
+  geom_histogram(aes(x=confirmation_delay,y=..density..),fill="#BB0021FF",col="black",binwidth=1) +
   scale_y_continuous(expand=expansion(mult=c(0,0.1))) +
   scale_x_continuous(expand=c(0,0),breaks=seq(0,10,by=1)) +
   xlab("Overall testing delay (days)") +
   ylab("Probability density") +
   main_theme+
   main_theme2 +
+  theme(plot.background = element_blank(),
+        panel.grid.major=element_line(size=0.01,color="grey70")) +
+  labs(tag="B")
+
+p_simulation <- ggplot(data=seir_dynamics$seir_outputs) + 
+  geom_bar(aes(x=step, y=inc, fill="Incidence"),stat="identity",col="#808180FF",size=0.25) +
+  geom_line(aes(x=step,y=Rt*2000,color="R[t]"), size=1) + 
+  geom_segment(data=R0_times,aes(x=x,xend=x,y=0,yend=4000),col="#008280FF",size=0.5,linetype='dashed') +
+  theme_light() +
+  scale_color_manual(values=c("R[t]" = "#3B4992FF"),labels=c(parse(text="R[t]"))) +
+  scale_fill_manual(values=c("Incidence"="#808180FF")) +
+  geom_hline(yintercept=1*2000,linetype="dashed",col="black",size=0.5) +
+  geom_text(data=R0_times,aes(x=x,y=4300,label=label),size=3,parse=TRUE) +
+  scale_y_continuous(expand=c(0,0),
+                     limits=c(0,4500),
+                     name="Incidence",
+                     sec.axis=sec_axis(trans=~.*1/2000, name=expression(R[t]))) + 
+  scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
+  main_theme +
+  main_theme2 + 
+  theme(legend.title=element_blank(), 
+        legend.position=c(0.8,0.8),
+        axis.line.x=element_blank(),
+        axis.title.x=element_blank(), 
+        axis.text.x=element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major=element_line(size=0.05,color="grey70")) + 
   labs(tag="C")
+
 
 p_incu_time <- simulated_viral_loads %>% 
   ggplot() + 
-  geom_smooth(aes(x=sampled_time,y=incu_period,fill="By sample date",col="By sample date"),size=0.5,alpha=0.25) +
-  geom_smooth(aes(x=infection_time,y=incu_period,fill="By infection date",col="By infection date"),size=0.5,alpha=0.25) +
+  geom_vline(data=R0_times,aes(xintercept=x),col="#008280FF",size=0.5,linetype='dashed') +
+  geom_smooth(aes(x=sampled_time,y=incu_period,fill="Grouped by sample date",col="Grouped by sample date"),size=0.5,alpha=0.25) +
+  geom_smooth(aes(x=infection_time,y=incu_period,fill="Grouped by infection date",col="Grouped by infection date"),size=0.5,alpha=0.25) +
   scale_y_continuous(expand=expansion(mult=c(0,0.1))) +
-  scale_x_continuous(expand=c(0,0)) +
-  scale_fill_manual(name="group",values=c("By sample date"="grey70","By infection date"="red")) +
-  scale_color_manual(name="group",values=c("By sample date"="black","By infection date"="red")) +
+  scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
+  scale_fill_manual(name="group",values=c("Grouped by sample date"="#3B4992FF","Grouped by infection date"="#008280FF")) +
+  scale_color_manual(name="group",values=c("Grouped by sample date"="#3B4992FF","Grouped by infection date"="#008280FF")) +
   xlab("Time") +
-  ylab("Smoothed incubation\n period (days)") +
+  ylab("Smoothed delay from infection\n to symptom onset (days)") +
   main_theme+
   main_theme2 +
   theme(legend.title=element_blank())+
-  theme(legend.position=c(0.4,0.9),legend.direction = "horizontal")+
+  theme(legend.position=c(0.75,0.2),
+        legend.direction = "horizontal",
+        axis.line.x=element_blank(),
+        axis.title.x=element_blank(), 
+        axis.text.x=element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major=element_line(size=0.05,color="grey70"))+
   labs(tag="D")
 p_conf_time <- simulated_viral_loads %>% ggplot() + 
-  geom_smooth(aes(x=sampled_time,y=confirmation_delay,fill="By sample date",color="By sample date"),size=0.5,alpha=0.25) +
-  geom_smooth(aes(x=infection_time,y=confirmation_delay,fill="By infection date",color="By infection date"),size=0.5,alpha=0.25) +
-  scale_fill_manual(name="group",values=c("By sample date"="grey70","By infection date"="red")) +
-  scale_color_manual(name="group",values=c("By sample date"="black","By infection date"="red")) +
+  geom_vline(data=R0_times,aes(xintercept=x),col="#008280FF",size=0.5,linetype='dashed') +
+  geom_smooth(aes(x=sampled_time,y=confirmation_delay,fill="Grouped by sample date",color="Grouped by sample date"),size=0.5,alpha=0.25) +
+  geom_smooth(aes(x=infection_time,y=confirmation_delay,fill="Grouped by infection date",color="Grouped by infection date"),size=0.5,alpha=0.25) +
+  scale_fill_manual(name="group",values=c("Grouped by sample date"="#EE0000FF","Grouped by infection date"="#BB0021FF")) +
+  scale_color_manual(name="group",values=c("Grouped by sample date"="#EE0000FF","Grouped by infection date"="#BB0021FF")) +
   scale_y_continuous(expand=expansion(mult=c(0,0.1))) +
-  scale_x_continuous(expand=c(0,0)) +
+  scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
   xlab("Time") +
-  ylab("Smoothed testing\n delay (days)") +
+  ylab("Smoothed delay from symptom\n onset to test date (days)") +
   main_theme +
   main_theme2 +
   theme(legend.title=element_blank()) +
-  theme(legend.position="none")+
+  theme(legend.position=c(0.75,0.2),
+        legend.direction = "horizontal",
+        axis.line.x=element_blank(),
+        axis.title.x=element_blank(), 
+        axis.text.x=element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major=element_line(size=0.05,color="grey70"))+
   labs(tag="E")
 
+p_cts <- simulated_viral_loads %>% ggplot() + 
+  geom_vline(data=R0_times,aes(xintercept=x),col="#008280FF",size=0.5,linetype='dashed') +
+  geom_smooth(aes(x=sampled_time,y=ct_obs,fill="Grouped by sample date",color="Grouped by sample date"),size=0.5,alpha=0.25) +
+  geom_smooth(aes(x=infection_time,y=ct_obs,fill="Grouped by infection date",color="Grouped by infection date"),size=0.5,alpha=0.25) +
+  scale_fill_manual(name="group",values=c("Grouped by sample date"="#631879FF","Grouped by infection date"="#5F559BFF")) +
+  scale_color_manual(name="group",values=c("Grouped by sample date"="#631879FF","Grouped by infection date"="#5F559BFF")) +
+  scale_y_continuous(expand=expansion(mult=c(0,0.1))) +
+  scale_x_continuous(breaks=seq(0,365,by=50),limits=c(0,365)) +
+  xlab("Time") +
+  ylab("Smoothed Ct values") +
+  main_theme +
+  main_theme2 +
+  theme(legend.title=element_blank()) +
+  theme(legend.position=c(0.75,0.2),
+        legend.direction = "horizontal",
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major=element_line(size=0.05,color="grey70"))+
+  labs(tag="F")
 
-p_main2 <- p_incu_overall + p_conf_overall + p_incu_time + p_conf_time + plot_layout(nrow=2,ncol=2,widths=c(1,2),byrow=FALSE)
 
-ggsave("figures/supplement/supp_symptom_surveillance2.pdf",p_main2,height=4,width=8,units="in",device=cairo_pdf)
-ggsave("figures/supplement/supp_symptom_surveillance2.png",p_main2,height=4,width=8,units="in",dpi=300)
+p_top <- p_incu_overall + p_conf_overall + plot_layout(nrow=1)
+
+p_main <- ((p_top) / p_simulation / p_incu_time / p_conf_time / p_cts)
+
+ggsave("~/Documents/GitHub/virosolver_paper/figures/supplement/FigS3.pdf",width=6.5,height=9)
