@@ -66,7 +66,7 @@ Analysis of how `EpiNow2` (Rt estimation) and `virosolver` (Ct model) fare at re
   - 3.changing_test_rates.R: Fits the exponential growth model to a time-series dataset of randomly sampled Ct values. Testing strategies tested are flat, rising and falling testing schemes. The estimated 35-day growth rate is compared to the growth rate based on the raw number of detected infections.
   - changing_testing_simulations.sh: shell script to run `3.changing_test_rates.R` on the cluster.
   - 3.symptomatic_testing_epinow2.R: Uses the simulations from `3.symptomatic_testing_simulate_linelists.R` and generates R(t) estimates based on reported symptomatic cases.
-  - 3.symptomatic_testing_virosolver.R: Uses the simulations from `3.symptomatic_testing_simulate_linelists.R` and generates growth rate estimates using the `virosolver` Ct models.
+  - 3.symptomatic_testing_virosolver_new.R: Uses the simulations from `3.symptomatic_testing_simulate_linelists.R` and generates growth rate estimates using the `virosolver` Ct models.  The `_samp_size` version of this script runs the same thing but varies the number of samples taken overall. Additionally, the `_samp_size` script also fits a "prevalence-only" model to each timepoint/simulation, which fits either an SEIR or SEEIRR model to cross-sectional prevalence assuming that the E+I compartment sizes are equivalent to RT-qPCR prevalence.
   - testing_simulations_epinow2.sh: shell script to run `3.symptomatic_testing_epinow2.R`.
   - testing_simulations_virosolver.sh: shell script to run `3.symptomatic_testing_virosolver.R`.
 
@@ -76,19 +76,30 @@ Simulation of repeated cross-sections arising from an SEIR epidemic. One script 
   - simulate_linelists_cluster.R: Simulates data from the SEIR model, to be called by the shell script `simulate_ma_seir_data.sh`. Can also be run directly locally.
   - 4.full_sim_recovery_cluster.R: As above, but called via the shell script `fit_sim_ma_seir_data.sh`. Uses simulation settings defined in `pars/massachusetts/sim_ma_control_use.csv`.
   - 4.full_sim_recovery_freegp.R: Identical to `4.full_sim_recovery_cluster.R`, but relaxes the assumption that the Gaussian process parameters are fixed. This could be done by editing the code to `4.full_sim_recovery_cluster.R` instead.
+  - 4.full_sim_recovery_cluster_pos.R: Identical to `4.full_sim_recovery_cluster.R`, but uses only positive Ct values, thereby not using any information on the proportion positive over time.
+  - 4.full_sim_recovery_cluster_late.R: Identical to `4.full_sim_recovery_cluster.R`, but assumes that sampling only begins part way through the epidemic.
+  - 4.full_sim_recovery_cluster_sampsize.R: Identical to `4.full_sim_recovery_cluster.R`, but also varies the total number of samples observed from the simulation.
+  - 4.full_sim_recovery_cluster_sampsize_prior.R: Identical to `4.full_sim_recovery_cluster_sampsize.R`, but does NOT use the likelihood (ie. it samples directly from the prior).
   - simulate_ma_seir_data.sh: calls the `simulate_linelists_cluster.R` script when run on the cluster.
   - fit_sim_ma_seir_data.sh: calls the `4.full_sim_recovery_cluster.R` script on the cluster.
   - fit_sim_ma_seir_freegp.sh: calls the `4.full_sim_recovery_freegp.R` script on the cluster.
+  - fit_sim_ma_seir_late.sh: calls the `4.full_sim_recovery_cluster_late.R` script on the cluster.
+  - fit_sim_ma_seir_pos.sh: calls the `4.full_sim_recovery_cluster_pos.R` script on the cluster.
+  - fit_sim_ma_seir_sampsize.sh: calls the `.full_sim_recovery_cluster_sampsize.R` script on the cluster.
+  - fit_sim_ma_seir_sampsize_prior.sh: calls the `4.full_sim_recovery_cluster_sampsize_prior.R` script on the cluster.
   - plot_gp_sim.R: specify the output location of one simulation-recovery from `4.full_sim_recovery_cluster.R` and generates Movie S1, the gif showing the Gaussian process model fit over repeated cross sections.
+   - plot_gp_sim_samplesize.R: specify the output location of one simulation-recovery from `4.full_sim_recovery_cluster_sampsize.R` and generates Movie S2, the gif showing the Gaussian process model fit to simulations of varying sample sizes.
+   - plot_gp_sim_late.R: specify the output location of one simulation-recovery from `4.full_sim_recovery_cluster_late.R` and generates Movie S3, the gif showing the Gaussian process model fit over repeated cross sections with sampling beginning partway through.
   - plot_for_sim_linelist.R: plots what was previously Figure 2 in the first preprint version. This just shows lots of plots from a single simulation when run after `4.full_sim_recovery.R`.
   
 ## 5. Analysis of BWH hospital data.
 Fit the various Ct models (single cross sectional SEIR and exponential growth models, and the full Gaussian process model) to the detectable Panther Ct values from BWH. The scripts can be run locally, but some shell scripts are also included to run longer jobs on the cluster.
   - 5.fit_ma_gp.R: The main script for the BWH Gaussian process analyses. Reads in and cleans the Panther Ct data from testing done at BWH. Fits the GP model to the entire timeseries and generates some corresponding plots in the figures folder. Uses the normal version of `lazymcmc`.
   - 5.fit_ma_free_gp.R: Identical to the above script, but allows the Gaussian Process parameters to be estimated within the MCMC fitting.
+  - 5.fit_ma_free_reduce_samp.R: Identical to `5.fit_ma_gp.R`, but sub-samples the overall dataset to demonstrate robustness to smaller sample sizes. NOTE that you need to edit the arguments on L31, L32 and L171/172. This script is to be run locally, with arguments changed for each assumed sampling strategy.
   - fit_real_ma.sh: shell script to call `5.fit_ma_gp.R`.
   - fit_real_free_gp.sh: shell script to call `5.fit_ma_free_gp.R`.
   - 5.fit_ma_single_timepoints_exp.R: fits the exponential growth Ct model to each week of data from BWH. Note, uses parallel tempering branch of `lazymcmc`.
   - 5.fit_ma_single_timepoints_seir.R: fits the SEIR Ct model to each week of data from BWH. Note, uses parallel tempering branch of `lazymcmc`.
   - 5.add_prior.R: script called as part of `Figure4.R`.
-  - Figure4.R: uses the outputs from the above scripts in this section to create Figure 4. Note that this script uses data from the NY times [covid-19 data github page](https://github.com/nytimes/covid-19-data).
+  - Figure4.R: uses the outputs from the above scripts in this section to create Figure 4. Note that this script uses data from the NY times [covid-19 data github page](https://github.com/nytimes/covid-19-data). Also plots all associated supplementary figures (Fig S14, S15 and S17).
