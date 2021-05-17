@@ -41,10 +41,11 @@ for(run in 1:nrow(analysis_control)){
     res <- foreach(i=1:nrow(unique_data_combs),.packages = c("rethinking","extraDistr","ggthemes","tidyverse","deSolve","patchwork")) %dopar% {
       runname <- paste0("ct_", unique_data_combs$location[i], "_",unique_data_combs$mean_week_date[i])
       dir.create(paste0(chainwd2,"/",dir_name_tmp,"/",runname),recursive = TRUE)
-      
-      devtools::load_all("~/Documents/GitHub/lazymcmc/") ## Parallel tempering branch
+      ## The level above this should be the folder with all of your Git repos
+      ## NOTE that foreach can sometimes be funny with working directories with dopar
+      devtools::load_all(paste0(GIT_WD,"/lazymcmc")) ## Parallel tempering branch
       mcmc_pars_use <- mcmcPars_ct_pt
-      devtools::load_all("~/Documents/GitHub/virosolver")
+      devtools::load_all(paste0(GIT_WD,"/virosolver"))
       
       ## If using cumulative cross sections or independent
       if(cumu_data) {

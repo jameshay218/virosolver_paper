@@ -12,7 +12,9 @@ library(fitdistrplus)
 library(deSolve)
 library(lazymcmc) ## devtools::install_github("jameshay218/lazymcmc")
 library(doParallel)
-devtools::load_all("~/Documents/GitHub/virosolver")
+## Where all Git repos are saved
+GIT_WD <- "~/Documents/Github"
+devtools::load_all(paste0(GIT_WD,"/virosolver"))
 
 ## CHANGE TO MAIN WD
 ## Important to set this to the full file path, as on L205 the foreach loop
