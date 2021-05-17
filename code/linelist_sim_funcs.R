@@ -495,3 +495,28 @@ simulate_viral_loads_wrapper <- function(linelist,
   return(viral_loads=vl_dat)
 }
 
+
+
+
+
+## Simulate binary PCR results (detectables) for the line list dataset. 
+#' INPUTS: 
+#'      1. linelist: the line list for observed individuals
+#'      2. pars: vector of named parameters for the detectability curve model
+#' OUTPUTS: 
+#'      1. A tibble with the line list data and the PCR status at the time of sampled
+simulate_detectable_wrapper <- function(linelist,
+                                         pars){
+  ## Control for changing standard deviation
+  detectable_dat <- linelist %>% 
+    ## Fix infection time for uninfected individuals
+    mutate(infection_time = ifelse(is.na(infection_time),-100, infection_time)) %>%
+    group_by(i) %>% 
+    mutate(days_since_infection = pmax(sampled_time - infection_time,-1),
+           pcr_detect_prob=ifelse(days_since_infection > 0, prob_detectable_curve(pars,days_since_infection),0),
+           pcr_status=rbinom(n(),1,pcr_detect_prob)) %>%
+    ungroup() %>%
+    mutate(infection_time = ifelse(infection_time < 0, NA, infection_time))
+  return(detectable_dat)
+}
+

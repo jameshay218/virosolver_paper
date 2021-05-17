@@ -25,11 +25,11 @@ source("code/plot_funcs.R")
 source("code/priors.R")
 
 devtools::load_all("~/Documents/GitHub/virosolver/")
-SAVE_PLOTS <- TRUE
-#run_ver <- "bwh"
-run_ver <- "nh"
+SAVE_PLOTS <- FALSE
+run_ver <- "bwh"
+#run_ver <- "nh"
 
-parTab <- read.csv("pars/partab_for_optim.csv")
+parTab <- read.csv("pars/generic/partab_for_optim.csv")
 
 if(run_ver == "bwh"){
   bwh_data <- read_csv("data/panther_Ct_20200403-20201110.csv")

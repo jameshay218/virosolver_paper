@@ -28,7 +28,7 @@ devtools::load_all("~/Documents/GitHub/virosolver/")
 ######################################################
 ## 1. FIT 2-STAGE HINGE MODEL SUBJECTIVELY
 ######################################################
-parTab <- read.csv("pars/partab_for_optim.csv")
+parTab <- read.csv("pars/generic/partab_for_optim.csv")
 
 ## Dealing with log10 per ul
 parTab[parTab$names == "LOD","values"] <- 3

@@ -1,5 +1,5 @@
 ########################################
-## SCRIPT TO SIMULATE LINE LIST DATA
+## SCRIPT TO GENERATE FIG S3
 ## 2nd November 2020
 ## ------ Aims ---------
 #' 1. Loads the virosolver R package
@@ -150,7 +150,7 @@ simulated_viral_loads <- simulated_viral_loads %>%
 obs_dat <- simulated_viral_loads %>% dplyr::select(sampled_time, ct_obs) %>%
   rename(t = sampled_time, ct=ct_obs) %>% arrange(t)
 
-R0_times <- tibble(x=c(0,seir_pars1[c("t_switch1","t_switch2")]),label=c("R[0] == 2","R[0] == 0.9","R[0] == 1.5"))
+R0_times <- tibble(x=c(0,seir_pars1[c("t_switch1","t_switch2")]),label=c("R[0] == 2","R[0] == 0.7","R[0] == 1.5"))
 
 
 
@@ -275,4 +275,4 @@ p_top <- p_incu_overall + p_conf_overall + plot_layout(nrow=1)
 
 p_main <- ((p_top) / p_simulation / p_incu_time / p_conf_time / p_cts)
 
-ggsave("~/Documents/GitHub/virosolver_paper/figures/supplement/FigS3.pdf",width=6.5,height=9)
+ggsave("~/Documents/GitHub/virosolver_paper/figures/supplement/FigS3_new.pdf",width=6.5,height=9)
