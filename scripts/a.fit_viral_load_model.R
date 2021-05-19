@@ -25,9 +25,9 @@ source("code/plot_funcs.R")
 source("code/priors.R")
 
 devtools::load_all("~/Documents/GitHub/virosolver/")
-SAVE_PLOTS <- FALSE
-run_ver <- "bwh"
-#run_ver <- "nh"
+SAVE_PLOTS <- TRUE
+#run_ver <- "bwh"
+run_ver <- "nh"
 
 parTab <- read.csv("pars/generic/partab_for_optim.csv")
 
@@ -70,7 +70,6 @@ names(pars_hinge2) <- parTab$names
 ## COST FUNCTION
 cost_function_hinge <- function(explore_pars, use_ct_cost=TRUE, ct_cost_weight=1, 
                                 ct_lower=12.1,ct_upper=32){
-
   pars1 <- pars_hinge2
   
   ## Pull out the parameters being optimized
@@ -132,7 +131,7 @@ pars1["t_unit"] <- 1
 ######################################################
 test_ages <- seq(0,55,by=1)
 vls <- viral_load_func(pars1, test_ages, FALSE)
-probs <- c(0,prop_detectable(test_ages[test_ages > 0], pars1, vls))
+probs <- c(0,prop_detectable(test_ages[test_ages > 0], pars1, vls[test_ages > 0]))
 fitted_dat <- tibble(age=test_ages,prob=probs)
 
 ## Generate draws from our priors and get quantiles
@@ -170,7 +169,7 @@ for(i in 1:n_samp1){
   ## Get trajectory viral load scale
   tmp_vls2 <- viral_load_func(tmp_pars, test_ages, TRUE)
   ## Get proportion detectable, but 0 on day 0
-  probs <- c(0,prop_detectable(test_ages[test_ages > 0], tmp_pars, tmp_vls))
+  probs <- c(0,prop_detectable(test_ages[test_ages > 0], tmp_pars, tmp_vls[test_ages > 0]))
   if(any(is.na(probs))) print(tmp_pars)
   ## Save
   tmp_trajs[i,] <- probs
@@ -328,11 +327,11 @@ if(SAVE_PLOTS){
     ggsave("figures/supplement/viral_kinetics_bwh.pdf",p_main,height=6,width=8)
     ggsave("figures/supplement/viral_kinetics_bwh.png",p_main,height=6,width=8)
     parTab$values <- pars1
-    write_csv(parTab,"pars/partab_fitted_bwh.csv")
+    #write_csv(parTab,"pars/partab_fitted_bwh.csv")
   } else {
     ggsave("figures/supplement/viral_kinetics_nh.pdf",p_main,height=6,width=8)
     ggsave("figures/supplement/viral_kinetics_nh.png",p_main,height=6,width=8)
     parTab$values <- pars1
-    write_csv(parTab,"pars/partab_fitted_nh.csv")
+    #write_csv(parTab,"pars/partab_fitted_nh.csv")
   }
 }
