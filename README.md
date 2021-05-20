@@ -15,7 +15,7 @@ There are 3 central R-packages to these analyses that are not on CRAN:
 1. The `lazymcmc` R package, which is used for the MCMC procedure. This is easy to do with `devtools::install_github("jameshay218/lazymcmc")`. *However*, for many of the analyses, a separate branch implementing parallel tempering is needed. I'd recommend you set this up as follows:
   - Install the `lazymcmc` base package using `devtools::install_github` as above. Any time this version is used, `library(lazymcmc)` is called.
   - Clone the `parallel_tempering` branch from [here](https://github.com/jameshay218/lazymcmc/tree/parallel_tempering). Whenever this version is needed, then `devtools::load_all("PATH TO LAZYMCMC PARALLEL TEMPERING REPO")` is called instead.
-2. The `virosolver` R-package, containing all of the Ct models and associated functions used here. This is the R-package you would use for your own datasets. As above, simply install with `devtools::install_github("jameshay218/virosolver")`.
+2. The `virosolver` R-package, containing all of the Ct models and associated functions used here. This is the R-package you would use for your own datasets. As above, simply install with `devtools::install_github("jameshay218/virosolver")`. Documentation for this package is available [here](https://jameshay218.github.io/virosolver/index.html).
 3. The `EpiNow2` R-package. This is available with instructions at [here](https://github.com/epiforecasts/EpiNow2), maintained and developed by colleagues at LSHTM. This package is simply used to generate R(t) estimates for the various comparisons throughout the paper. Note that this uses [RStan](https://mc-stan.org/users/interfaces/rstan).
 
 A number of generic R packages are also used throughout:
