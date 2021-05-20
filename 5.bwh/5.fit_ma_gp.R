@@ -27,10 +27,10 @@ devtools::load_all(paste0(HOME_WD,"/virosolver"))
 index <- 1994
 set.seed(index)
 n_samp <- 1000
-runname <- "ma_gp"
+runname <- "ma_gp_test"
 #runname <- "ma_gp_free"
 run_version <- "gp" ##gp, seir or exp##
-rerun_mcmc <- FALSE
+rerun_mcmc <- TRUE
 
 ## CHANGE TO MAIN WD
 ## Important to set this to the full file path, as on L205 the foreach loop
@@ -231,7 +231,7 @@ for(ii in seq_along(samps)){
   tmp_pars <- get_index_pars(chain_comb, samps[ii])
   vl <- viral_load_func(tmp_pars,test_ages,FALSE)
   vl_trajs[ii,]  <- extraDistr::rgumbel(length(vl),vl,tmp_pars["obs_sd"])
-  detect_trajs[ii,] <- c(0,prop_detectable(test_ages[test_ages > 0], tmp_pars, vl))
+  detect_trajs[ii,] <- c(0,prop_detectable(test_ages[test_ages > 0], tmp_pars, vl[test_ages > 0]))
   trajs[ii,] <- pmax(smooth.spline(inc_func_use(tmp_pars,times))$y,0.0000001)
   #trajs[ii,] <- pmax(inc_func_use(get_index_pars(chain_comb, samps[ii]),times),0.0000001)
 }
@@ -391,7 +391,7 @@ p_inc <- ggplot(trajs_quants) +
   export_theme +
   ylab("Relative probability of infection") +
   xlab("Date") +
-  scale_x_date(limits=as.Date(c("2020-03-01","2020-12-01")),breaks="1 month",expand=c(0,0)) +
+  #scale_x_date(limits=as.Date(c("2020-03-01","2020-12-01")),breaks="1 month",expand=c(0,0)) +
   #coord_cartesian(ylim=c(-0.0001,0.005)) +
   scale_y_continuous(expand=c(0,0))  +
   labs(tag="C")

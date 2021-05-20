@@ -27,7 +27,7 @@ setwd(main_wd)
 
 ## IMPORTANT - change this flag to TRUE if running the MCMC for the first time
 rerun_mcmc_seeirr <- FALSE
-rerun_mcmc_ct <- FALSE
+rerun_mcmc_ct <- TRUE
 
 ## Clean data and set up model parameters. Also some data plots.
 source("1.nursing_homes/1.nursing_home_analyses_headers.R")

@@ -27,7 +27,7 @@ devtools::load_all(paste0(HOME_WD,"lazymcmc"))
 ## Arguments for this run
 set.seed(1)
 n_samp <- 1000
-runname <- "ma_exp"
+runname <- "ma_exp_test"
 run_version <- "exp" ##gp, seir or exp##
 
 ## IMPORTANT - change this flag to TRUE if running the MCMC for the first time

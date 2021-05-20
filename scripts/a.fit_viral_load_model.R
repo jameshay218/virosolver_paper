@@ -64,7 +64,7 @@ targeted_dat <- tibble(age=ages_observed, prob=desired_probs)
 
 pars_hinge2 <- parTab$values
 names(pars_hinge2) <- parTab$names
-
+pars_hinge2["tshift"] <- 1
 
 ######################################################
 ## COST FUNCTION
@@ -327,11 +327,11 @@ if(SAVE_PLOTS){
     ggsave("figures/supplement/viral_kinetics_bwh.pdf",p_main,height=6,width=8)
     ggsave("figures/supplement/viral_kinetics_bwh.png",p_main,height=6,width=8)
     parTab$values <- pars1
-    #write_csv(parTab,"pars/partab_fitted_bwh.csv")
+    write_csv(parTab,"pars/partab_fitted_bwh.csv")
   } else {
     ggsave("figures/supplement/viral_kinetics_nh.pdf",p_main,height=6,width=8)
     ggsave("figures/supplement/viral_kinetics_nh.png",p_main,height=6,width=8)
     parTab$values <- pars1
-    #write_csv(parTab,"pars/partab_fitted_nh.csv")
+    write_csv(parTab,"pars/partab_fitted_nh.csv")
   }
 }

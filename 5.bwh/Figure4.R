@@ -39,15 +39,15 @@ obs_times <- c(35, 42, 49, 56, 63, 70, 77, 84, 91, 98, 105, 112, 119, 126,
 seir_timeshift <- 36
 
 ## Run names for the various MCMC chains
-runname_seir <- "ma_seir_constrained" ## Constrained prior on seed time
+runname_seir <- "ma_seir_test" ## Constrained prior on seed time
 runname_seir_prior <- "ma_seir_prior_constrained"
 runname_seir_prior_broad <- "ma_seir_rerun_prior"
 runname_seir_alt <- "ma_seir_rerun" ## Less constrained prior on seed time
-runname_exp <- "ma_exp"
+runname_exp <- "ma_exp_test"
 
 ## Where the MCMC chains are stored
 chainwd <- paste0("~/Documents/GitHub/virosolver_paper/mcmc_chains/5.real_ma_single_timepoint/")
-chainwd_gp <- paste0("~/Documents/GitHub/virosolver_paper/mcmc_chains/4.real_ma_ct/ma_gp/")
+chainwd_gp <- paste0("~/Documents/GitHub/virosolver_paper/mcmc_chains/4.real_ma_ct/ma_gp_test/")
 
 ## MCMC parameters for Ct model fits
 mcmcPars_ct_seir <- c("adaptive_period"=30000)
