@@ -85,7 +85,7 @@ seir_dynamics <- simulate_seir_wrapper(population_n=population_n,solve_times=tim
                                        pars=seir_pars1, ver="odin",switch_model=TRUE)
 ## Simulate onset times, confirmation delays etc
 ## This returns a tibble with line list entries for **every** individual in the population
-complete_linelist <- virosolver::simulate_observations_wrapper(seir_dynamics$incidence,times=times,
+complete_linelist <- virosolver::simulate_observations_wrapper(as.integer(seir_dynamics$incidence),times=times,
                                                                   population_n=population_n)
 
 ########################################

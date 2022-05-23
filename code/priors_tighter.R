@@ -1,8 +1,8 @@
 ## Standard deviations of viral kinetics priors
 sds_exp <- sds_seir <- sds_gp <- c("beta"=0.25,"R0"=0.6,
-                                   "obs_sd"=0.5,"viral_peak"=2,
-                                   "wane_rate2"=1,"t_switch"=3,"level_switch"=1,
-                                   "prob_detect"=0.03,
+                                   "obs_sd"=0.25,"viral_peak"=1,
+                                   "wane_rate2"=1,"t_switch"=1.5,"level_switch"=1,
+                                   "prob_detect"=0.015,
                                    "incubation"=0.25, "infectious"=0.5,
                                    "rho"=2,"nu"=0.5)
 

@@ -36,14 +36,14 @@ main_theme <- theme_classic() +
         plot.tag = element_text(size=10,face="bold"),
         panel.grid.minor.x=element_blank())
 
-main_theme2 <- theme(axis.text.x=element_text(size=7),
-                     axis.text.y=element_text(size=7),
+main_theme2 <- theme(axis.text.x=element_text(size=7.5),
+                     axis.text.y=element_text(size=7.5),
                      axis.title.x=element_text(size=8),
                      axis.title.y=element_text(size=8),
-                     legend.text=element_text(size=7),
+                     legend.text=element_text(size=7.5),
                      plot.tag=element_text(size=10,face="bold"))
 
-save_plot <- TRUE
+save_plots <- TRUE
 
 
 ########################################
@@ -75,7 +75,7 @@ seir_pars1["I0"] <- 0.0001
 
 set.seed(2)
 seir_dynamics <- simulate_seir_wrapper(population_n=population_n,solve_times=times,
-                                       pars=seir_pars1, ver="ode",switch_model=FALSE)
+                                       pars=seir_pars1, ver="odin",switch_model=FALSE)
 
 seir_dynamics$plot
 
@@ -87,12 +87,12 @@ fit <- smooth.spline(seir_dynamics$incidence/population_n,spar=0.6)
 midpoint <- which.max(y) - 1
 
 p1 <- ggplot(data=tibble(x=times,y=y)) + 
+  geom_ribbon(aes(x=x,ymax=y,ymin=0),fill="grey70",size=0.5,col="black") +
   geom_segment(aes(x=midpoint-25,xend=midpoint-25,y=0,yend=y[midpoint-25+1]),size=0.25,linetype="dotted",col="grey40") +
   geom_segment(aes(x=midpoint+25,xend=midpoint+25,y=0,yend=y[midpoint+25+1]),size=0.25,linetype="dotted",col="grey40") +
-  geom_line(aes(x=x,y=y),size=0.5) +
-  scale_y_continuous(expand=c(0,0),limits=c(0,0.018),breaks=seq(0,0.018,by=0.0025),labels=seq(0,0.018,by=0.0025)*100000) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,350,by=50),limits=c(0,200)) +
-  ylab("Incidence per 100,000") +
+  scale_y_continuous(expand=c(0,0),limits=c(0,0.018),breaks=seq(0,0.018,by=0.005),labels=seq(0,0.018,by=0.005)*100000) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,350,by=50),limits=c(0,170)) +
+  ylab("Incidence \nper 100,000") +
   xlab("Time") +
   theme_pubr() +
   theme(text=element_text(family="sans"))+
@@ -108,12 +108,12 @@ p1 <- ggplot(data=tibble(x=times,y=y)) +
         legend.background =  element_rect(color=NA,fill=NA)) 
 p1
 p1_alt <- ggplot(data=tibble(x=times,y=y)) + 
-  geom_segment(aes(x=midpoint-25,xend=midpoint-25,y=0,yend=y[midpoint-25+1]),size=0.25,linetype="dotted",col="grey40") +
-  geom_segment(aes(x=midpoint+25,xend=midpoint+25,y=0,yend=y[midpoint+25+1]),size=0.25,linetype="dotted",col="grey40") +
+  #geom_segment(aes(x=midpoint-25,xend=midpoint-25,y=0,yend=y[midpoint-25+1]),size=0.25,linetype="dotted",col="grey40") +
+  #geom_segment(aes(x=midpoint+25,xend=midpoint+25,y=0,yend=y[midpoint+25+1]),size=0.25,linetype="dotted",col="grey40") +
   geom_bar(aes(x=x,y=y),size=0.25,stat="identity",col="black") +
-  scale_y_continuous(expand=c(0,0),limits=c(0,0.018),breaks=seq(0,0.018,by=0.0025),labels=seq(0,0.018,by=0.0025)*100000) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,350,by=50),limits=c(0,200)) +
-  ylab("Incidence per 100,000") +
+  scale_y_continuous(expand=c(0,0),limits=c(0,0.018),breaks=seq(0,0.018,by=0.005),labels=seq(0,0.018,by=0.005)*100000) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,350,by=50),limits=c(0,170)) +
+  ylab("Incidence \nper 100,000") +
   xlab("Time") +
   theme_pubr() +
   theme(text=element_text(family="sans"))+
@@ -151,8 +151,8 @@ p2 <- ggplot(data=plot_dat) +
   geom_segment(aes(x=midpoint+50,xend=midpoint+50,y=0,yend=y[midpoint+50+1]),size=0.25,linetype="dotted",col="grey40") +
   geom_segment(aes(x=midpoint-25,xend=midpoint-25,y=0,yend=y[midpoint-25+1]),size=0.25,linetype="dotted",col="grey40") +
   geom_segment(aes(x=midpoint-50,xend=midpoint-50,y=0,yend=y[midpoint-50+1]),size=0.25,linetype="dotted",col="grey40") +
-  scale_y_continuous(expand=c(0,0),limits=c(0,0.018),breaks=seq(0,0.018,by=0.0025),labels=seq(0,0.018,by=0.0025)*100000) +
-  scale_x_continuous(expand=c(0,0),breaks=seq(0,350,by=50),limits=c(0,200)) +
+  scale_y_continuous(expand=c(0,0),limits=c(0,0.018),breaks=seq(0,0.018,by=0.005),labels=seq(0,0.018,by=0.005)*100000) +
+  scale_x_continuous(expand=c(0,0),breaks=seq(0,350,by=50),limits=c(0,170)) +
   ylab("Estimated incidence") +
   xlab("Time") +
   theme_pubr() +
@@ -170,9 +170,9 @@ p2 <- ggplot(data=plot_dat) +
 p2
 
 if(save_plots){
-  ggsave("~/Documents/virosolver_figure/fig0_baseA.pdf",p1,height=1.5,width=4,colormode="cmyk")
-  ggsave("~/Documents/virosolver_figure/fig0_baseA_alt.pdf",p1_alt,height=1.5,width=4,colormode="cmyk")
-  ggsave("~/Documents/virosolver_figure/fig0_baseB.pdf",p2,height=1.5,width=4,colormode="cmyk")
+  ggsave("figures/Figure0/fig0_baseA.pdf",p1,height=1.3,width=3.5,colormode="cmyk")
+  #ggsave("figures/Figure0/fig0_baseA_alt.pdf",p1_alt,height=1.3,width=3.7,colormode="cmyk")
+  ggsave("figures/Figure0/fig0_baseB.pdf",p2,height=1.3,width=3.5,colormode="cmyk")
 }
 
 complete_linelist <- virosolver::simulate_observations_wrapper(incidence=seir_dynamics$incidence,times=times,
@@ -240,12 +240,12 @@ p_option1_alt <- plot_dat_cts1 %>%
   mutate(top_range=n(),dist=(top_range-1)/2) %>%
   mutate(i=1:n()-1,i=i-dist)%>%
   ggplot() + 
-  geom_point(aes(x=as.numeric(as.factor(sampled_time))+i/20,y=ct_obs,col=ct_range),size=0.4)+
+  geom_point(aes(x=as.numeric(as.factor(sampled_time))+i/20,y=ct_obs,col=ct_range),size=0.3)+
   scale_x_continuous(limits=c(0.75,2.25),breaks=seq(1,2,by=1)) +
   geom_hline(yintercept=40,linetype="dotted") +
   scale_color_manual(values=c("Old"="#1E88E5","Intermediate"="#FFC107","Recent"="#D81B60")) +
   scale_y_continuous(expand=c(0,0),trans="reverse",breaks=seq(15,40,by=5),limits=c(42,12),
-                     sec.axis=sec_axis(trans=~.*-1/log2(10) + 40/log2(10) + 3, name="Viral load",breaks=seq(3,11,by=1))) +
+                     sec.axis=sec_axis(trans=~.*-1/log2(10) + 40/log2(10) + 3, name="Viral load",breaks=seq(3,11,by=2))) +
   ylab("Ct value") +
   theme_pubr() +
   theme(text=element_text(family="sans"))+
@@ -292,8 +292,8 @@ p_option1_hist_all <- simulated_viral_loads %>% filter(ct_obs < 40) %>%
 p_option1_hist_all
 
 if(save_plots){
-  ggsave("figures/Figure0/ct_dotplots.pdf",p_option1,height=1.3,width=3,colormode="cmyk")
-  ggsave("figures/Figure0/ct_dotplots_alt.pdf",p_option1_alt,height=1.3,width=3,colormode="cmyk")
+  ggsave("figures/Figure0/ct_dotplots.pdf",p_option1,height=1.2,width=3,colormode="cmyk")
+  ggsave("figures/Figure0/ct_dotplots_alt.pdf",p_option1_alt,height=1.2,width=3,colormode="cmyk")
   ggsave("figures/Figure0/subset_hists.pdf",p_option1_hist,height=1.5,width=3.5,colormode="cmyk")
   ggsave("figures/Figure0/all_hists.pdf",p_option1_hist_all,height=1.25,width=8,colormode="cmyk")
 }
