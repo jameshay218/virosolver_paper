@@ -135,7 +135,7 @@ p_dat <- ggplot(obs_dat1 %>% filter(ct < 40)) +
   scale_x_continuous(limits=c(0,200))
 
 ## GP model parameters for fitting
-parTab <- read.csv("pars/partab_gp_model.csv")
+parTab <- read.csv("pars/massachusetts//partab_gp_model.csv")
 pars <- parTab$values
 names(pars) <- parTab$names
 
