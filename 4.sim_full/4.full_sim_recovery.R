@@ -97,11 +97,11 @@ times_extended <-c (times,max(times):(max(times)+50))
 ## Use "ode" for deterministic
 ## Use "odin" for stochastic
 seir_dynamics <- simulate_seir_wrapper(population_n=population_n,solve_times=times,
-                                       pars=seir_pars, ver="odin", switch_model=TRUE)
+                                       pars=seir_pars, switch_model=TRUE)
 
 ## Simulate onset times, confirmation delays etc
 ## This returns a tibble with line list entries for **every** individual in the population
-complete_linelist <- virosolver::simulate_observations_wrapper(seir_dynamics$incidence,times=times,
+complete_linelist <- virosolver::simulate_observations_wrapper(floor(seir_dynamics$incidence),times=times,
                                                                population_n=population_n)
 ## Save simulated line list
 write_csv(complete_linelist, path=paste0(plot_wd,"/",runname,"_",population_n,"_",index,"_full_linelist.csv"))
@@ -112,8 +112,8 @@ probs <- probs[1:length(times_extended)]
 frac_report <- tibble(t=times_extended,prob=probs)
 
 observed_linelist <- simulate_reporting(complete_linelist, 
-                                               frac_report=NULL,
-                                               timevarying_prob=frac_report,
+                                               frac_report=0.1,
+                                               timevarying_prob=NULL,
                                                solve_times=times, 
                                                symptomatic=FALSE)
 

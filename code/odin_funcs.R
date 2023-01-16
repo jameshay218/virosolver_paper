@@ -205,7 +205,7 @@ simulate_seir_wrapper <- function(population_n, solve_times, pars, switch_model=
     }
     
     res$Rt <- (res$S/population_n) * res$beta * pars["infectious"]
-  } 
+ 
   ## Get absolute incidence
   incidence <- incidence * population_n
   

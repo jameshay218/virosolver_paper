@@ -385,7 +385,6 @@ simulate_reporting <- function(individuals,
                confirmed_time=sampled_time)
     }
   }
-  
   ## Plot incidence of infections,  onsets, confirmations and number sampled per day
   ## Get grouped (not line list) subset data
   grouped_dat <- sampled_individuals %>% 
@@ -397,7 +396,7 @@ simulate_reporting <- function(individuals,
     rename(var=name,
            t=value,
            n=n) %>%
-    complete(var, nesting(t),fill = list(n = 0)) %>%
+    complete(nesting(t),fill = list(n = 0)) %>%
     mutate(ver="Sampled individuals")
   
   ## Grouped entire dataset
@@ -410,7 +409,7 @@ simulate_reporting <- function(individuals,
     rename(var=name,
            t=value,
            n=n) %>%
-    complete(var, nesting(t),fill = list(n = 0)) %>%
+    complete(nesting(t),fill = list(n = 0)) %>%
     mutate(ver="All individuals")
   
   grouped_dat_combined <- bind_rows(grouped_dat, grouped_dat_all)
